@@ -62,19 +62,26 @@ export default function DashboardClient({ data }: { data: any }) {
   return (
     <div style={{ display: 'flex', minHeight: '100vh' }}>
 
-      {/* Mobile overlay */}
-      {sidebarOpen && (
-        <div
-          onClick={() => setSidebarOpen(false)}
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 30 }}
-        />
-      )}
+      {/* Mobile overlay — sits above main content, below sidebar */}
+      <div
+        className="mobile-overlay"
+        onClick={() => setSidebarOpen(false)}
+        style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0,0,0,0.65)',
+          zIndex: 45,
+          opacity: sidebarOpen ? 1 : 0,
+          pointerEvents: sidebarOpen ? 'auto' : 'none',
+          transition: 'opacity 0.3s',
+        }}
+      />
 
       {/* Sidebar */}
       <aside
         style={{
           width: 240,
-          background: 'rgba(255,255,255,0.03)',
+          background: 'rgba(15,23,42,0.98)',
           borderRight: '1px solid rgba(255,255,255,0.07)',
           flexShrink: 0,
           position: 'sticky',
@@ -82,11 +89,10 @@ export default function DashboardClient({ data }: { data: any }) {
           height: '100vh',
           overflowY: 'auto',
           padding: '24px 12px',
-          display: 'flex',
           flexDirection: 'column',
           gap: 4,
           zIndex: 40,
-          transition: 'transform 0.25s',
+          transition: 'transform 0.3s cubic-bezier(0.4,0,0.2,1)',
         }}
         className="hidden sm:flex"
       >
@@ -142,12 +148,126 @@ export default function DashboardClient({ data }: { data: any }) {
         </div>
       </aside>
 
+      {/* ── MOBILE SIDEBAR (slide-in drawer) ─────────── */}
+      {/* Controlled purely by transform — no display:none so transition works */}
+      <style>{`@media (min-width: 640px) { .mobile-sidebar, .mobile-overlay { display: none !important; } }`}</style>
+      <aside
+        className="mobile-sidebar"
+        style={{
+          width: 200,
+          background: 'rgba(10,15,30,0.98)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          borderRight: '1px solid rgba(255,255,255,0.09)',
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          height: '100vh',
+          overflowY: 'auto',
+          padding: '20px 10px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 4,
+          zIndex: 50,
+          transform: sidebarOpen ? 'translateX(0)' : 'translateX(-100%)',
+          transition: 'transform 0.3s cubic-bezier(0.4,0,0.2,1)',
+          boxShadow: sidebarOpen ? '6px 0 40px rgba(0,0,0,0.6)' : 'none',
+        }}
+      >
+        {/* Close button inside drawer */}
+        <button
+          onClick={() => setSidebarOpen(false)}
+          style={{
+            alignSelf: 'flex-end',
+            marginBottom: 8,
+            background: 'rgba(255,255,255,0.07)',
+            border: '1px solid rgba(255,255,255,0.12)',
+            borderRadius: 8,
+            padding: '6px 10px',
+            color: '#94a3b8',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4,
+            fontSize: 12,
+          }}
+        >
+          <X style={{ width: 14, height: 14 }} /> Close
+        </button>
+
+        {/* Profile mini */}
+        <div style={{ padding: '10px 8px', marginBottom: 10, borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ height: 36, width: 36, borderRadius: '50%', background: 'rgba(59,130,246,0.2)', border: '1.5px solid rgba(59,130,246,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
+              {user.profile_image
+                ? <img src={user.profile_image} alt="avatar" style={{ width: 36, height: 36, objectFit: 'cover' }} />
+                : <User style={{ width: 16, height: 16, color: '#60a5fa' }} />
+              }
+            </div>
+            <div style={{ overflow: 'hidden' }}>
+              <p style={{ color: '#fff', fontWeight: 600, fontSize: 12, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.name}</p>
+              <p style={{ color: '#64748b', fontSize: 10, margin: 0 }}>{user.xts_id}</p>
+            </div>
+          </div>
+        </div>
+
+        {NAV.map(item => {
+          const Icon = item.icon;
+          const active = activeTab === item.id;
+          return (
+            <button
+              key={item.id}
+              onClick={() => { setActiveTab(item.id); setSidebarOpen(false); }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 8,
+                padding: '9px 10px', borderRadius: 10, border: 'none', cursor: 'pointer',
+                background: active ? `${item.color}18` : 'transparent',
+                borderLeft: active ? `2px solid ${item.color}` : '2px solid transparent',
+                color: active ? item.color : '#94a3b8',
+                fontWeight: active ? 600 : 400, fontSize: 13, width: '100%', textAlign: 'left',
+                transition: 'all 0.15s',
+              }}
+            >
+              <Icon style={{ width: 15, height: 15, flexShrink: 0 }} />
+              {item.label}
+              {item.id === 'resign' && resignationPending && (
+                <span style={{ marginLeft: 'auto', fontSize: 9, background: '#f87171', color: '#fff', borderRadius: 6, padding: '1px 5px' }}>Pending</span>
+              )}
+            </button>
+          );
+        })}
+
+        <div style={{ marginTop: 'auto', paddingTop: 14, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+          <form action="/api/auth/logout" method="POST" style={{ width: '100%' }}>
+            <button type="submit" style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 10px', borderRadius: 10, border: 'none', cursor: 'pointer', background: 'transparent', color: '#64748b', fontSize: 12, width: '100%', transition: 'all 0.15s' }}>
+              <LogOut style={{ width: 14, height: 14 }} />
+              Sign Out
+            </button>
+          </form>
+        </div>
+      </aside>
+
       {/* Main content */}
       <main style={{ flex: 1, padding: '32px 24px', overflowY: 'auto' }}>
 
-        {/* Mobile nav toggle */}
+        {/* Mobile nav toggle button */}
         <div className="sm:hidden" style={{ marginBottom: 20 }}>
-          <button onClick={() => setSidebarOpen(!sidebarOpen)} style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '8px 12px', color: '#fff', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13 }}>
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            style={{
+              background: 'rgba(255,255,255,0.07)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              borderRadius: 8,
+              padding: '8px 14px',
+              color: '#fff',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              cursor: 'pointer',
+              fontSize: 13,
+              fontWeight: 500,
+            }}
+          >
             <Menu style={{ width: 16, height: 16 }} /> Menu
           </button>
         </div>
