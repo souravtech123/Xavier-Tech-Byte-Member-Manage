@@ -248,7 +248,7 @@ export default function DashboardClient({ data }: { data: any }) {
       </aside>
 
       {/* Main content */}
-      <main style={{ flex: 1, padding: '32px 24px', overflowY: 'auto' }}>
+      <main style={{ flex: 1, padding: '24px 12px', overflowY: 'auto', minWidth: 0 }}>
 
         {/* Mobile nav toggle button */}
         <div className="sm:hidden" style={{ marginBottom: 20 }}>
@@ -274,28 +274,30 @@ export default function DashboardClient({ data }: { data: any }) {
 
         {/* ── PROFILE ────────────────────────────────── */}
         {activeTab === 'profile' && (
-          <div style={{ maxWidth: 680 }}>
+          <div style={{ maxWidth: 680, width: '100%' }}>
             {sectionHeader(<User style={{ width: 18, height: 18, color: '#60a5fa' }} />, 'My Profile', '#60a5fa')}
 
-            <div style={{ ...cardStyle, padding: 28 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 24 }}>
+            <div style={{ ...cardStyle, padding: '20px 16px' }}>
+              {/* Avatar + Name — wraps on small screens */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20, flexWrap: 'wrap' }}>
                 <div style={{ height: 72, width: 72, borderRadius: '50%', background: 'linear-gradient(135deg, rgba(59,130,246,0.3), rgba(99,102,241,0.3))', border: '2px solid rgba(59,130,246,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0, boxShadow: '0 0 20px rgba(59,130,246,0.2)' }}>
                   {user.profile_image
                     ? <img src={user.profile_image} alt="Profile" style={{ width: 72, height: 72, objectFit: 'cover' }} />
                     : <User style={{ width: 32, height: 32, color: '#60a5fa' }} />
                   }
                 </div>
-                <div>
-                  <h1 style={{ fontSize: 22, fontWeight: 800, color: '#fff', margin: '0 0 4px' }}>{user.name}</h1>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <h1 style={{ fontSize: 20, fontWeight: 800, color: '#fff', margin: '0 0 6px', wordBreak: 'break-word' }}>{user.name}</h1>
                   {user.team && (
-                    <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 20, background: 'rgba(59,130,246,0.15)', border: '1px solid rgba(59,130,246,0.3)', color: '#60a5fa' }}>
+                    <span style={{ display: 'inline-block', fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 20, background: 'rgba(59,130,246,0.15)', border: '1px solid rgba(59,130,246,0.3)', color: '#60a5fa' }}>
                       {user.team} Team
                     </span>
                   )}
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+              {/* Detail fields — auto-fit: 2 col on desktop, 1 col on tiny screens */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 10 }}>
                 {[
                   { label: 'XTS ID', value: user.xts_id },
                   { label: 'Email', value: user.email },
@@ -304,23 +306,23 @@ export default function DashboardClient({ data }: { data: any }) {
                   { label: 'Semester', value: user.semester ? `Sem ${user.semester}` : '—' },
                   { label: 'Team', value: user.team || 'Unassigned' },
                 ].map(f => (
-                  <div key={f.label} style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: '10px 14px' }}>
-                    <p style={{ color: '#64748b', fontSize: 11, margin: '0 0 3px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{f.label}</p>
-                    <p style={{ color: '#e2e8f0', fontSize: 14, fontWeight: 500, margin: 0 }}>{f.value}</p>
+                  <div key={f.label} style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: '10px 12px', minWidth: 0, overflow: 'hidden' }}>
+                    <p style={{ color: '#64748b', fontSize: 10, margin: '0 0 3px', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>{f.label}</p>
+                    <p style={{ color: '#e2e8f0', fontSize: 13, fontWeight: 500, margin: 0, wordBreak: 'break-all', overflowWrap: 'anywhere' }}>{f.value}</p>
                   </div>
                 ))}
               </div>
 
               {/* Stats */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginTop: 20 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginTop: 16 }}>
                 {[
-                  { label: 'Certificates', count: certificates.length, color: '#fbbf24' },
-                  { label: 'Events', count: events.length, color: '#a78bfa' },
-                  { label: 'Projects', count: projects.length, color: '#34d399' },
+                  { label: 'Certs',    count: certificates.length, color: '#fbbf24' },
+                  { label: 'Events',   count: events.length,       color: '#a78bfa' },
+                  { label: 'Projects', count: projects.length,     color: '#34d399' },
                 ].map(s => (
-                  <div key={s.label} style={{ textAlign: 'center', background: `${s.color}12`, border: `1px solid ${s.color}30`, borderRadius: 12, padding: '14px 8px' }}>
-                    <p style={{ fontSize: 26, fontWeight: 800, color: s.color, margin: 0 }}>{s.count}</p>
-                    <p style={{ fontSize: 11, color: '#94a3b8', margin: '3px 0 0' }}>{s.label}</p>
+                  <div key={s.label} style={{ textAlign: 'center', background: `${s.color}12`, border: `1px solid ${s.color}30`, borderRadius: 12, padding: '12px 6px' }}>
+                    <p style={{ fontSize: 22, fontWeight: 800, color: s.color, margin: 0 }}>{s.count}</p>
+                    <p style={{ fontSize: 10, color: '#94a3b8', margin: '3px 0 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.label}</p>
                   </div>
                 ))}
               </div>
