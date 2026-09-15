@@ -194,17 +194,15 @@ export async function getMemberData(xts_id: string) {
 
 export async function getAllDataForAdmin() {
   await connectToDatabase();
-  const members = await User.find({ role: 'member' }).lean();
-  const certificates = await Certificate.find().populate('member_id').lean();
-  const events = await Event.find().sort({ date: 1 }).lean();
-  const projects = await Project.find().lean();
-  const resignations = await Resignation.find().sort({ submittedAt: -1 }).lean();
 
-  return {
-    members: JSON.parse(JSON.stringify(members)),
-    certificates: JSON.parse(JSON.stringify(certificates)),
-    events: JSON.parse(JSON.stringify(events)),
-    projects: JSON.parse(JSON.stringify(projects)),
-    resignations: JSON.parse(JSON.stringify(resignations)),
-  };
+  // Run all queries in parallel — total wait = slowest single query, not the sum.
+  const [members, certificates, events, projects, resignations] = await Promise.all([
+    User.find({ role: 'member' }).lean(),
+    Certificate.find().populate('member_id').lean(),
+    Event.find().sort({ date: 1 }).lean(),
+    Project.find().lean(),
+    Resignation.find().sort({ submittedAt: -1 }).lean(),
+  ]);
+
+  return JSON.parse(JSON.stringify({ members, certificates, events, projects, resignations }));
 }

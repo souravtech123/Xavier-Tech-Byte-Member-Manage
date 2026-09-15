@@ -13,7 +13,7 @@ export async function POST(req: Request) {
     }
 
     // Hardcoded admin login
-    if (email === 'ankitadmin2026' && password === 'ankit_755_24-27') {
+    if (email === 'ankit@admin2026' && password === 'ankit_755_24-27') {
       const token = signToken({ id: 'hardcoded-admin-id', role: 'admin', xts_id: 'admin' });
       
       const res = NextResponse.json({ success: true, redirect: '/admin' });

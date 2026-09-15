@@ -13,7 +13,7 @@ if (!MONGODB_URI) {
 let cached = (global as any).mongoose;
 
 if (!cached) {
-  cached = (global as any).mongoose = { conn: null, promise: null };
+  cached = (global as any).mongoose = { conn: null, promise: null, seeded: false };
 }
 
 async function connectToDatabase() {
@@ -33,19 +33,24 @@ async function connectToDatabase() {
 
   try {
     cached.conn = await cached.promise;
-    
-    // Auto-seed admin user
-    const adminExists = await User.findOne({ role: 'admin' });
-    if (!adminExists) {
-      const hashedPassword = await bcrypt.hash('admin', 10);
-      await User.create({
-        xts_id: 'ADMIN',
-        email: 'admin@xts.com',
-        name: 'XTS Administrator',
-        role: 'admin',
-        password: hashedPassword
-      });
-      console.log('Admin seeded: admin@xts.com / admin');
+
+    // Auto-seed admin user — runs at most ONCE per process lifetime.
+    // The `cached.seeded` flag prevents an extra Atlas round-trip on every
+    // subsequent request after the connection is already established.
+    if (!cached.seeded) {
+      cached.seeded = true; // set eagerly so concurrent requests don't race
+      const adminExists = await User.findOne({ role: 'admin' }).lean();
+      if (!adminExists) {
+        const hashedPassword = await bcrypt.hash('admin', 10);
+        await User.create({
+          xts_id: 'ADMIN',
+          email: 'admin@xts.com',
+          name: 'XTS Administrator',
+          role: 'admin',
+          password: hashedPassword,
+        });
+        console.log('Admin seeded: admin@xts.com / admin');
+      }
     }
   } catch (e) {
     cached.promise = null;

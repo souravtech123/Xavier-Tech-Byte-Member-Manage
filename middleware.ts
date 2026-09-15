@@ -16,7 +16,18 @@ export function middleware(request: NextRequest) {
   }
 
   if (token && isAuthPage) {
-    return NextResponse.redirect(new URL('/dashboard', request.url)); // We might want a better routing based on role but it's ok for now
+    // Decode JWT payload manually (Edge compatible)
+    let role = 'member';
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      if (payload && payload.role) role = payload.role;
+    } catch (e) {}
+
+    if (role === 'admin') {
+      return NextResponse.redirect(new URL('/admin', request.url));
+    } else {
+      return NextResponse.redirect(new URL('/dashboard', request.url));
+    }
   }
 
   return NextResponse.next();
