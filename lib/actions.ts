@@ -1,5 +1,26 @@
 'use server';
 
+import { promises as fs } from 'fs';
+import path from 'path';
+
+async function saveFile(file: File | null): Promise<string | undefined> {
+  if (!file || typeof file === 'string' || file.size === 0) return undefined;
+  try {
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+    const fileName = `${Date.now()}-${file.name.replace(/\s+/g, '_')}`;
+    const uploadDir = path.join(process.cwd(), 'public', 'uploads');
+    await fs.mkdir(uploadDir, { recursive: true });
+    const filePath = path.join(uploadDir, fileName);
+    await fs.writeFile(filePath, buffer);
+    return `/uploads/${fileName}`;
+  } catch (error) {
+    console.error('Error saving file:', error);
+    return undefined;
+  }
+}
+
+
 import connectToDatabase from './mongodb';
 import { User } from '@/models/User';
 import { Certificate } from '@/models/Certificate';
@@ -18,9 +39,11 @@ export async function createMember(formData: FormData) {
     const course = formData.get('course') as string;
     const team = formData.get('team') as string;
     const semester = formData.get('semester') as string;
-    const profile_image = formData.get('profile_image') as string;
+    const profileImageFile = formData.get('profile_image') as File | null;
 
     if (!name || !email || !xts_id) return { error: 'Name, Email, and XTS ID are required' };
+
+    const profile_image = await saveFile(profileImageFile) || '';
 
     const newMember = await User.create({ name, email, xts_id, phone, course, team, semester, profile_image, role: 'member' });
     revalidatePath('/admin');
@@ -40,14 +63,22 @@ export async function updateMember(member_id: string, formData: FormData) {
     const course = formData.get('course') as string;
     const team = formData.get('team') as string;
     const semester = formData.get('semester') as string;
-    const profile_image = formData.get('profile_image') as string;
-    const id_card_url = formData.get('id_card_url') as string;
+    const profileImageFile = formData.get('profile_image') as File | null;
+    const idCardFile = formData.get('id_card_url') as File | null;
 
     if (!name || !email || !xts_id) return { error: 'Name, Email, and XTS ID are required' };
 
+    const updateData: any = { name, email, xts_id, phone, course, team, semester };
+    
+    const savedProfileImage = await saveFile(profileImageFile);
+    if (savedProfileImage) updateData.profile_image = savedProfileImage;
+    
+    const savedIdCard = await saveFile(idCardFile);
+    if (savedIdCard) updateData.id_card_url = savedIdCard;
+
     const updatedMember = await User.findByIdAndUpdate(
       member_id,
-      { name, email, xts_id, phone, course, team, semester, profile_image, id_card_url },
+      updateData,
       { new: true }
     );
 
@@ -205,4 +236,28 @@ export async function getAllDataForAdmin() {
   ]);
 
   return JSON.parse(JSON.stringify({ members, certificates, events, projects, resignations }));
+}
+
+export async function verifyAndGetMember(id: string, xts_id: string) {
+  try {
+    await connectToDatabase();
+    const user = await User.findOne({ _id: id, xts_id }).lean();
+    if (!user) return { error: 'Invalid XTS-ID' };
+
+    const certificates = await Certificate.find({ member_id: id }).lean();
+    const events = await Event.find().sort({ date: 1 }).lean();
+    const projects = await Project.find().lean();
+    
+    return {
+      success: true,
+      data: {
+        user: JSON.parse(JSON.stringify(user)),
+        certificates: JSON.parse(JSON.stringify(certificates)),
+        events: JSON.parse(JSON.stringify(events)),
+        projects: JSON.parse(JSON.stringify(projects))
+      }
+    };
+  } catch (error: any) {
+    return { error: error.message };
+  }
 }
