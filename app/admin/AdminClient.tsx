@@ -491,13 +491,14 @@ export default function AdminClient({ initialData }: { initialData: any }) {
             <form
               action={async (f) => {
                 setLoading(true);
-                const res = await updateMember(editingMember._id, f);
+                const res = await updateMember(f);
                 if (res.error) setMessage(`Error: ${res.error}`);
                 else { setEditingMember(null); window.location.reload(); }
                 setLoading(false);
               }}
               style={{ display: 'flex', flexDirection: 'column', gap: 14 }}
             >
+              <input type="hidden" name="member_id" value={editingMember._id} />
               <div style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
                 <label style={{ width: 90, height: 90, borderRadius: 12, border: '2px dashed rgba(255,255,255,0.2)', background: 'rgba(255,255,255,0.02)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', overflow: 'hidden', flexShrink: 0 }}>
                   <input type="file" name="profile_image" accept="image/*" style={{ display: 'none' }} onChange={(e) => {

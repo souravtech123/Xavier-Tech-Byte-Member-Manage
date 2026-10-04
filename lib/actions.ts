@@ -53,9 +53,10 @@ export async function createMember(formData: FormData) {
   }
 }
 
-export async function updateMember(member_id: string, formData: FormData) {
+export async function updateMember(formData: FormData) {
   try {
     await connectToDatabase();
+    const member_id = formData.get('member_id') as string;
     const name = formData.get('name') as string;
     const email = formData.get('email') as string;
     const xts_id = formData.get('xts_id') as string;
