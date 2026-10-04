@@ -1,6 +1,6 @@
 'use client';
 
-import { QRCodeSVG } from 'qrcode.react';
+import { QRCodeSVG, QRCodeCanvas } from 'qrcode.react';
 
 import { useState } from 'react';
 import {
@@ -9,7 +9,7 @@ import {
 } from '@/lib/actions';
 import {
   Users, FileBadge, Calendar, FolderGit2, Plus, Loader2, QrCode,
-  Pencil, Trash2, X, LogOut, CheckCircle2, XCircle, Clock, CreditCard
+  Pencil, Trash2, X, LogOut, CheckCircle2, XCircle, Clock, CreditCard, Download
 } from 'lucide-react';
 
 const NAV = [
@@ -34,6 +34,9 @@ export default function AdminClient({ initialData }: { initialData: any }) {
   const [addPreview, setAddPreview] = useState<string | null>(null);
   const [editPreview, setEditPreview] = useState<string | null>(null);
   const [resLoading, setResLoading] = useState<string | null>(null);
+  const [filterTeam, setFilterTeam] = useState('');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [searchName, setSearchName] = useState('');
 
   const { members, certificates, events, projects, resignations } = initialData;
   const pendingCount = (resignations || []).filter((r: any) => r.status === 'pending').length;
@@ -126,7 +129,16 @@ export default function AdminClient({ initialData }: { initialData: any }) {
                 <div style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
                   <label style={{ width: 100, height: 100, borderRadius: 12, border: '2px dashed rgba(255,255,255,0.2)', background: 'rgba(255,255,255,0.02)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', overflow: 'hidden', flexShrink: 0 }}>
                     <input type="file" name="profile_image" accept="image/*" style={{ display: 'none' }} onChange={(e) => {
-                      if (e.target.files?.[0]) setAddPreview(URL.createObjectURL(e.target.files[0]));
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        if (file.size > 5 * 1024 * 1024) {
+                          alert('File size exceeds 5MB limit. Please select a smaller image.');
+                          e.target.value = '';
+                          setAddPreview(null);
+                          return;
+                        }
+                        setAddPreview(URL.createObjectURL(file));
+                      }
                     }} />
                     {addPreview ? <img src={addPreview} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ textAlign: 'center', color: '#94a3b8' }}><Plus style={{ margin: '0 auto' }} /><span style={{ fontSize: 10, display: 'block', marginTop: 2 }}>Photo</span></div>}
                   </label>
@@ -150,7 +162,7 @@ export default function AdminClient({ initialData }: { initialData: any }) {
                     { name: 'course', label: 'Course' },
                     { name: 'team', label: 'Team' },
                     { name: 'semester', label: 'Semester' },
-                  ].map(f => (
+                  ].map((f: { name: string; label: string; req?: boolean; placeholder?: string; type?: string; val?: any }) => (
                     <div key={f.name}>
                       <label style={{ display: 'block', fontSize: 12, color: '#94a3b8', marginBottom: 6 }}>{f.label}</label>
                       <input name={f.name} type={f.type || 'text'} required={!!f.req} placeholder={f.placeholder} className={inputCls} style={inputStyle} />
@@ -166,84 +178,170 @@ export default function AdminClient({ initialData }: { initialData: any }) {
           )}
 
           {/* ── VIEW MEMBERS ───────────────── */}
-          {activeTab === 'view_members' && (
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-                <h2 style={{ fontSize: 18, fontWeight: 700, color: '#fff', margin: 0 }}>Members ({members.length})</h2>
-                <button
-                  onClick={() => {
-                    const headers = ['Name', 'XTS ID', 'Email', 'Phone', 'Course', 'Semester', 'Team'];
-                    const rows = members.map((m: any) => [
-                      m.name || '',
-                      m.xts_id || '',
-                      m.email || '',
-                      m.phone || '',
-                      m.course || '',
-                      m.semester || '',
-                      m.team || '',
-                    ]);
-                    const csvContent = [headers, ...rows].map(e => e.map(item => `"${(item||'').toString().replace(/"/g, '""')}"`).join(',')).join('\n');
-                    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-                    const link = document.createElement('a');
-                    link.href = URL.createObjectURL(blob);
-                    link.download = `members_export.csv`;
-                    link.click();
-                  }}
-                  style={{ background: '#10b981', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: 13 }}
-                >
-                  Export to Excel (CSV)
-                </button>
-              </div>
+          {activeTab === 'view_members' && (() => {
+            // Collect unique teams
+            const teams = Array.from(new Set((members as any[]).map((m: any) => m.team).filter(Boolean))) as string[];
 
-              <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 12, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.07)' }}>
-                <div style={{ overflowX: 'auto' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 13 }}>
-                    <thead>
-                      <tr style={{ background: 'rgba(255,255,255,0.05)', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                        <th style={{ padding: '12px 16px', color: '#94a3b8', fontWeight: 600 }}>Member</th>
-                        <th style={{ padding: '12px 16px', color: '#94a3b8', fontWeight: 600 }}>XTS ID</th>
-                        <th style={{ padding: '12px 16px', color: '#94a3b8', fontWeight: 600 }}>Contact</th>
-                        <th style={{ padding: '12px 16px', color: '#94a3b8', fontWeight: 600 }}>Details</th>
-                        <th style={{ padding: '12px 16px', color: '#94a3b8', fontWeight: 600, textAlign: 'right' }}>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {members.map((m: any) => (
-                        <tr key={m._id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                          <td style={{ padding: '16px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                              <div style={{ height: 80, width: 80, borderRadius: 12, background: 'rgba(59,130,246,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0, border: '1px solid rgba(255,255,255,0.1)' }}>
-                                {m.profile_image ? <img src={m.profile_image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <Users style={{ width: 28, height: 28, color: '#60a5fa' }} />}
-                              </div>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                                <span style={{ color: '#fff', fontWeight: 700, fontSize: 16 }}>{m.name}</span>
-                              </div>
-                            </div>
-                          </td>
-                          <td style={{ padding: '12px 16px', color: '#cbd5e1' }}>{m.xts_id}</td>
-                          <td style={{ padding: '12px 16px', color: '#cbd5e1' }}>
-                            <div>{m.email}</div>
-                            <div style={{ color: '#64748b', fontSize: 11 }}>{m.phone}</div>
-                          </td>
-                          <td style={{ padding: '12px 16px', color: '#cbd5e1' }}>
-                            <div>{m.course} {m.semester && `(Sem ${m.semester})`}</div>
-                            {m.team && <div style={{ color: '#60a5fa', fontSize: 11 }}>{m.team} Team</div>}
-                          </td>
-                          <td style={{ padding: '12px 16px', textAlign: 'right' }}>
-                            <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
-                              <button onClick={() => setQrMember(m._id)} title="Show QR Code" style={{ padding: '6px', borderRadius: 8, border: 'none', cursor: 'pointer', background: 'rgba(59,130,246,0.1)', color: '#60a5fa' }}><QrCode style={{ width: 14, height: 14 }} /></button>
-                              <button onClick={() => setEditingMember(m)} title="Edit" style={{ padding: '6px', borderRadius: 8, border: 'none', cursor: 'pointer', background: 'rgba(255,255,255,0.07)', color: '#94a3b8' }}><Pencil style={{ width: 14, height: 14 }} /></button>
-                              <button onClick={() => handleDelete(m._id)} title="Delete" style={{ padding: '6px', borderRadius: 8, border: 'none', cursor: 'pointer', background: 'rgba(248,113,113,0.1)', color: '#f87171' }}><Trash2 style={{ width: 14, height: 14 }} /></button>
-                            </div>
-                          </td>
+            // Helper: parse XTS-YY-NNN → numeric sort key
+            const xtsKey = (xts_id: string) => {
+              const parts = (xts_id || '').split('-');
+              const year = parseInt(parts[1] || '0', 10);
+              const num  = parseInt(parts[2] || '0', 10);
+              return year * 10000 + num;
+            };
+
+            const filtered = (members as any[])
+              .filter((m: any) => !filterTeam || m.team === filterTeam)
+              .filter((m: any) => !searchName || m.name.toLowerCase().includes(searchName.toLowerCase()))
+              .sort((a: any, b: any) => {
+                const diff = xtsKey(a.xts_id) - xtsKey(b.xts_id);
+                return sortOrder === 'asc' ? diff : -diff;
+              });
+
+            return (
+              <div>
+                {/* ── Top bar ── */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
+                  <h2 style={{ fontSize: 18, fontWeight: 700, color: '#fff', margin: 0 }}>
+                    Members ({filtered.length}{filterTeam ? ` · ${filterTeam}` : ''}{searchName ? ` · "${searchName}"` : ''})
+                  </h2>
+                  <button
+                    onClick={() => {
+                      const headers = ['Name', 'XTS ID', 'Email', 'Phone', 'Course', 'Semester', 'Team'];
+                      const rows = filtered.map((m: any) => [
+                        m.name || '', m.xts_id || '', m.email || '', m.phone || '',
+                        m.course || '', m.semester || '', m.team || '',
+                      ]);
+                      const csv = [headers, ...rows].map(r => r.map(v => `"${(v||'').toString().replace(/"/g,'""')}"`).join(',')).join('\n');
+                      const link = document.createElement('a');
+                      link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
+                      link.download = 'members_export.csv';
+                      link.click();
+                    }}
+                    style={{ background: '#10b981', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: 13 }}
+                  >
+                    Export to Excel (CSV)
+                  </button>
+                </div>
+
+                {/* ── Search + Filter + Sort controls ── */}
+                <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
+
+                  {/* Search by name */}
+                  <div style={{ position: 'relative', flexGrow: 1, minWidth: 180, maxWidth: 300 }}>
+                    <span style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#64748b', pointerEvents: 'none', fontSize: 14 }}>🔍</span>
+                    <input
+                      type="text"
+                      placeholder="Search by name..."
+                      value={searchName}
+                      onChange={e => setSearchName(e.target.value)}
+                      style={{ width: '100%', paddingLeft: 32, paddingRight: searchName ? 32 : 12, paddingTop: 7, paddingBottom: 7, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', color: '#fff', borderRadius: 8, fontSize: 13, outline: 'none', boxSizing: 'border-box' }}
+                    />
+                    {searchName && (
+                      <button onClick={() => setSearchName('')} style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#64748b', padding: 0, lineHeight: 1 }}>✕</button>
+                    )}
+                  </div>
+
+                  {/* Team filter */}
+                  <select
+                    value={filterTeam}
+                    onChange={e => setFilterTeam(e.target.value)}
+                    style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', color: '#fff', borderRadius: 8, padding: '7px 12px', fontSize: 13, cursor: 'pointer', minWidth: 160 }}
+                  >
+                    <option value="">All Teams</option>
+                    {teams.map(t => <option key={t} value={t}>{t} Team</option>)}
+                  </select>
+
+                  {/* Sort toggle */}
+                  <button
+                    onClick={() => setSortOrder(s => s === 'asc' ? 'desc' : 'asc')}
+                    style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', color: '#cbd5e1', borderRadius: 8, padding: '7px 14px', fontSize: 13, cursor: 'pointer', fontWeight: 500 }}
+                  >
+                    XTS ID: {sortOrder === 'asc' ? '↑ Ascending' : '↓ Descending'}
+                  </button>
+
+                  {/* Clear all filters */}
+                  {(filterTeam || searchName) && (
+                    <button
+                      onClick={() => { setFilterTeam(''); setSearchName(''); }}
+                      style={{ background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.2)', color: '#f87171', borderRadius: 8, padding: '7px 12px', fontSize: 13, cursor: 'pointer' }}
+                    >
+                      ✕ Clear All
+                    </button>
+                  )}
+                </div>
+
+                {/* ── Table ── */}
+                <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 12, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.07)' }}>
+                  <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 13 }}>
+                      <thead>
+                        <tr style={{ background: 'rgba(255,255,255,0.05)', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                          <th style={{ padding: '12px 16px', color: '#94a3b8', fontWeight: 600 }}>Member</th>
+                          <th style={{ padding: '12px 16px', color: '#94a3b8', fontWeight: 600 }}>XTS ID</th>
+                          <th style={{ padding: '12px 16px', color: '#94a3b8', fontWeight: 600 }}>Contact</th>
+                          <th style={{ padding: '12px 16px', color: '#94a3b8', fontWeight: 600 }}>Details</th>
+                          <th style={{ padding: '12px 16px', color: '#94a3b8', fontWeight: 600, textAlign: 'right' }}>Actions</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {filtered.length === 0 ? (
+                          <tr>
+                            <td colSpan={5} style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}>
+                              No members found{filterTeam ? ` in "${filterTeam}" team` : ''}.
+                            </td>
+                          </tr>
+                        ) : filtered.map((m: any) => (
+                          <tr key={m._id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                            <td style={{ padding: '16px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+                                  <div style={{ height: 80, width: 80, borderRadius: 12, background: 'rgba(59,130,246,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0, border: '1px solid rgba(255,255,255,0.1)' }}>
+                                    {m.profile_image ? <img src={m.profile_image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <Users style={{ width: 28, height: 28, color: '#60a5fa' }} />}
+                                  </div>
+                                  {m.profile_image && (
+                                    <a
+                                      href={m.profile_image}
+                                      download={`${m.name.replace(/\s+/g, '_')}_photo`}
+                                      title="Download Photo"
+                                      style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#60a5fa', textDecoration: 'none', background: 'rgba(59,130,246,0.1)', padding: '3px 8px', borderRadius: 6, border: '1px solid rgba(59,130,246,0.2)' }}
+                                    >
+                                      <Download style={{ width: 10, height: 10 }} /> Photo
+                                    </a>
+                                  )}
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                  <span style={{ color: '#fff', fontWeight: 700, fontSize: 16 }}>{m.name}</span>
+                                </div>
+                              </div>
+                            </td>
+                            <td style={{ padding: '12px 16px', color: '#cbd5e1', fontFamily: 'monospace', fontWeight: 600 }}>{m.xts_id}</td>
+                            <td style={{ padding: '12px 16px', color: '#cbd5e1' }}>
+                              <div>{m.email}</div>
+                              <div style={{ color: '#64748b', fontSize: 11 }}>{m.phone}</div>
+                            </td>
+                            <td style={{ padding: '12px 16px', color: '#cbd5e1' }}>
+                              <div>{m.course} {m.semester && `(Sem ${m.semester})`}</div>
+                              {m.team && <div style={{ color: '#60a5fa', fontSize: 11 }}>{m.team} Team</div>}
+                            </td>
+                            <td style={{ padding: '12px 16px', textAlign: 'right' }}>
+                              <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                                <button onClick={() => setQrMember(m._id)} title="Show QR Code" style={{ padding: '6px', borderRadius: 8, border: 'none', cursor: 'pointer', background: 'rgba(59,130,246,0.1)', color: '#60a5fa' }}><QrCode style={{ width: 14, height: 14 }} /></button>
+                                <button onClick={() => setEditingMember(m)} title="Edit" style={{ padding: '6px', borderRadius: 8, border: 'none', cursor: 'pointer', background: 'rgba(255,255,255,0.07)', color: '#94a3b8' }}><Pencil style={{ width: 14, height: 14 }} /></button>
+                                <button onClick={() => handleDelete(m._id)} title="Delete" style={{ padding: '6px', borderRadius: 8, border: 'none', cursor: 'pointer', background: 'rgba(248,113,113,0.1)', color: '#f87171' }}><Trash2 style={{ width: 14, height: 14 }} /></button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
+
+
 
           {/* ── CERTIFICATES ───────────────── */}
           {activeTab === 'certificates' && (
@@ -403,7 +501,10 @@ export default function AdminClient({ initialData }: { initialData: any }) {
               <div style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
                 <label style={{ width: 90, height: 90, borderRadius: 12, border: '2px dashed rgba(255,255,255,0.2)', background: 'rgba(255,255,255,0.02)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', overflow: 'hidden', flexShrink: 0 }}>
                   <input type="file" name="profile_image" accept="image/*" style={{ display: 'none' }} onChange={(e) => {
-                    if (e.target.files?.[0]) setEditPreview(URL.createObjectURL(e.target.files[0]));
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      setEditPreview(URL.createObjectURL(file));
+                    }
                   }} />
                   {(editPreview || editingMember.profile_image) ? <img src={editPreview || editingMember.profile_image} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ textAlign: 'center', color: '#94a3b8' }}><Pencil style={{ margin: '0 auto', width: 14, height: 14 }} /><span style={{ fontSize: 10, display: 'block', marginTop: 2 }}>Photo</span></div>}
                 </label>
@@ -427,13 +528,16 @@ export default function AdminClient({ initialData }: { initialData: any }) {
                 { name: 'team', label: 'Team', val: editingMember.team },
                 { name: 'semester', label: 'Semester', val: editingMember.semester },
                 { name: 'id_card_url', label: 'ID Card Image (Upload)', type: 'file' },
-              ].map(f => (
+              ].map((f: { name: string; label: string; req?: boolean; placeholder?: string; type?: string; val?: any }) => (
                 <div key={f.name}>
                   <label style={{ display: 'block', fontSize: 12, color: '#94a3b8', marginBottom: 5 }}>
                     {f.name === 'id_card_url' && <CreditCard style={{ width: 12, height: 12, display: 'inline', marginRight: 4 }} />}
                     {f.label}
                   </label>
-                  <input name={f.name} type={f.type || 'text'} {...(f.type !== 'file' ? { defaultValue: f.val || '' } : {})} required={!!f.req} placeholder={f.placeholder} className={inputCls} style={inputStyle} accept={f.type === 'file' ? 'image/*' : undefined} />
+                  <input name={f.name} type={f.type || 'text'} {...(f.type !== 'file' ? { defaultValue: f.val || '' } : {})} required={!!f.req} placeholder={f.placeholder} className={inputCls} style={inputStyle} accept={f.type === 'file' ? 'image/*' : undefined} onChange={(e) => {
+                    if (f.type === 'file' && e.target.files?.[0]) {
+                    }
+                  }} />
                 </div>
               ))}
               <button type="submit" disabled={loading} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '11px', borderRadius: 10, border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg, #3b82f6, #6366f1)', color: '#fff', fontWeight: 600, fontSize: 14, marginTop: 4 }}>
@@ -445,22 +549,53 @@ export default function AdminClient({ initialData }: { initialData: any }) {
       )}
     
       {/* QR Code Modal */}
-      {qrMember && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, zIndex: 100 }}>
-          <div style={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 18, padding: 28, width: '100%', maxWidth: 350, textAlign: 'center' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-              <h2 style={{ fontSize: 18, fontWeight: 700, color: '#fff', margin: 0 }}>Member QR Code</h2>
-              <button onClick={() => setQrMember(null)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#64748b' }}><X style={{ width: 20, height: 20 }} /></button>
+      {qrMember && (() => {
+        const qrMemberObj = (members as any[]).find((m: any) => m._id === qrMember);
+        const qrUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/member/${qrMember}`;
+        const downloadQR = () => {
+          const canvas = document.getElementById('qr-download-canvas') as HTMLCanvasElement | null;
+          if (!canvas) return;
+          const link = document.createElement('a');
+          link.download = `${qrMemberObj?.name?.replace(/\s+/g, '_') || 'member'}_QR.png`;
+          link.href = canvas.toDataURL('image/png');
+          link.click();
+        };
+        return (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, zIndex: 100 }}>
+            <div style={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 18, padding: 28, width: '100%', maxWidth: 350, textAlign: 'center' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                <div style={{ textAlign: 'left' }}>
+                  <h2 style={{ fontSize: 18, fontWeight: 700, color: '#fff', margin: 0 }}>Member QR Code</h2>
+                  {qrMemberObj && <p style={{ color: '#64748b', fontSize: 12, margin: '2px 0 0' }}>{qrMemberObj.name} · {qrMemberObj.xts_id}</p>}
+                </div>
+                <button onClick={() => setQrMember(null)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#64748b' }}><X style={{ width: 20, height: 20 }} /></button>
+              </div>
+
+              {/* Visible SVG QR */}
+              <div style={{ background: '#fff', padding: 20, borderRadius: 12, display: 'inline-block', marginBottom: 16 }}>
+                <QRCodeSVG value={qrUrl} size={200} />
+              </div>
+
+              {/* Hidden canvas QR for download */}
+              <div style={{ display: 'none' }}>
+                <QRCodeCanvas id="qr-download-canvas" value={qrUrl} size={400} />
+              </div>
+
+              <p style={{ color: '#94a3b8', fontSize: 13, margin: '0 0 16px' }}>
+                Scan to view profile · XTS ID required to unlock
+              </p>
+
+              {/* Download button */}
+              <button
+                onClick={downloadQR}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: '10px', borderRadius: 10, border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg, #3b82f6, #6366f1)', color: '#fff', fontWeight: 600, fontSize: 14 }}
+              >
+                <Download style={{ width: 15, height: 15 }} /> Download QR Code
+              </button>
             </div>
-            <div style={{ background: '#fff', padding: 20, borderRadius: 12, display: 'inline-block', marginBottom: 20 }}>
-              <QRCodeSVG value={`${window.location.origin}/member/${qrMember}`} size={200} />
-            </div>
-            <p style={{ color: '#94a3b8', fontSize: 14, margin: 0 }}>
-              Scan this QR to view the member's profile.<br />Requires their XTS ID to unlock.
-            </p>
           </div>
-        </div>
-      )}
+        );
+      })()}
 </div>
   );
 }
