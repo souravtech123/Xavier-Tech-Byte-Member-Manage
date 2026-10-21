@@ -1,35 +1,213 @@
 'use client';
 
 import { QRCodeSVG, QRCodeCanvas } from 'qrcode.react';
-
 import { useState } from 'react';
 import {
-  createMember, createCertificate, createEvent, createProject,
-  updateMember, deleteMember, approveResignation, rejectResignation
+  createMember,
+  createCertificate,
+  createEvent,
+  updateEvent,
+  deleteEvent,
+  createProject,
+  updateProject,
+  deleteProject,
+  updateMember,
+  deleteMember,
+  approveResignation,
+  rejectResignation,
 } from '@/lib/actions';
 import {
-  Users, FileBadge, Calendar, FolderGit2, Plus, Loader2, QrCode,
-  Pencil, Trash2, X, LogOut, CheckCircle2, XCircle, Clock, CreditCard, Download
+  Users,
+  FileBadge,
+  Calendar,
+  FolderGit2,
+  Plus,
+  Loader2,
+  QrCode,
+  Pencil,
+  Trash2,
+  X,
+  LogOut,
+  CheckCircle2,
+  XCircle,
+  Clock,
+  CreditCard,
+  Download,
+  Video,
+  ShieldCheck,
+  Search,
+  ArrowUpDown,
+  UserPlus,
+  Shield,
+  ChevronRight,
+  Sparkles,
+  ExternalLink,
 } from 'lucide-react';
+import MeetingAdminSection from './MeetingAdminSection';
+
+const C = {
+  ink: '#0F1226',
+  paper: '#F4F5FA',
+  white: '#FFFFFF',
+  blue: '#3347F2',
+  blueLight: '#EEF0FF',
+  gold: '#FFB627',
+  border: '#DDE0F0',
+  muted: '#777D98',
+  subtle: '#A0A5BA',
+  green: '#16845B',
+  greenBg: '#EAF7F0',
+  red: '#C43D4B',
+  redBg: '#FFF0F1',
+  amber: '#986500',
+  amberBg: '#FFF7E5',
+};
 
 const NAV = [
-  { id: 'members',      label: 'Add Member',    icon: Plus,        color: '#60a5fa' },
-  { id: 'view_members', label: 'Members',        icon: Users,       color: '#38bdf8' },
-  { id: 'certificates', label: 'Certificates',   icon: FileBadge,   color: '#fbbf24' },
-  { id: 'events',       label: 'Events',         icon: Calendar,    color: '#a78bfa' },
-  { id: 'projects',     label: 'Projects',       icon: FolderGit2,  color: '#34d399' },
-  { id: 'resignations', label: 'Resignations',   icon: LogOut,      color: '#f87171' },
+  { id: 'members', label: 'Add Member', icon: Plus, description: 'Register a member' },
+  { id: 'view_members', label: 'Members', icon: Users, description: 'Manage member records' },
+  { id: 'meetings', label: 'Meetings', icon: Video, description: 'Coordinate meetings' },
+  { id: 'certificates', label: 'Certificates', icon: FileBadge, description: 'Issue certificates' },
+  { id: 'events', label: 'Events', icon: Calendar, description: 'Manage events' },
+  { id: 'projects', label: 'Projects', icon: FolderGit2, description: 'Track projects' },
+  { id: 'resignations', label: 'Resignations', icon: LogOut, description: 'Review requests' },
 ];
 
-const inputCls = 'w-full rounded-xl px-4 py-2.5 text-white text-sm outline-none transition-all';
-const inputStyle = { background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' } as const;
+const inputStyle = {
+  width: '100%',
+  boxSizing: 'border-box' as const,
+  padding: '11px 13px',
+  border: `1px solid ${C.border}`,
+  borderRadius: 10,
+  background: C.white,
+  color: C.ink,
+  fontSize: 13,
+  outline: 'none',
+  transition: 'border-color 0.2s, box-shadow 0.2s',
+};
 
+const labelStyle = {
+  display: 'block',
+  fontSize: 12,
+  fontWeight: 600,
+  color: C.muted,
+  marginBottom: 7,
+};
 
-export default function AdminClient({ initialData }: { initialData: any }) {
+const cardStyle = {
+  background: C.white,
+  border: `1px solid ${C.border}`,
+  borderRadius: 16,
+  boxShadow: '0 4px 20px rgba(15,18,38,0.035)',
+};
+
+const primaryButtonStyle = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: 8,
+  padding: '11px 16px',
+  borderRadius: 10,
+  border: 'none',
+  cursor: 'pointer',
+  background: C.blue,
+  color: C.white,
+  fontWeight: 700,
+  fontSize: 13,
+  transition: 'background 0.2s, transform 0.2s',
+};
+
+const secondaryButtonStyle = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: 7,
+  padding: '9px 12px',
+  borderRadius: 9,
+  border: `1px solid ${C.border}`,
+  cursor: 'pointer',
+  background: C.white,
+  color: C.ink,
+  fontWeight: 600,
+  fontSize: 12,
+};
+
+function SectionHeading({
+  eyebrow,
+  title,
+  description,
+}: {
+  eyebrow: string;
+  title: string;
+  description: string;
+}) {
+  return (
+    <div style={{ marginBottom: 24 }}>
+      <p
+        style={{
+          margin: '0 0 7px',
+          color: C.blue,
+          fontSize: 10,
+          fontWeight: 800,
+          letterSpacing: '0.14em',
+          textTransform: 'uppercase',
+        }}
+      >
+        {eyebrow}
+      </p>
+
+      <h2
+        style={{
+          color: C.ink,
+          fontSize: 23,
+          fontWeight: 800,
+          letterSpacing: '-0.045em',
+          margin: 0,
+        }}
+      >
+        {title}
+      </h2>
+
+      <p
+        style={{
+          margin: '7px 0 0',
+          color: C.muted,
+          fontSize: 13,
+          lineHeight: 1.7,
+        }}
+      >
+        {description}
+      </p>
+    </div>
+  );
+}
+
+function Field({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div style={{ minWidth: 0 }}>
+      <label style={labelStyle}>{label}</label>
+      {children}
+    </div>
+  );
+}
+
+export default function AdminClient({
+  initialData,
+}: {
+  initialData: any;
+}) {
   const [activeTab, setActiveTab] = useState('members');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [editingMember, setEditingMember] = useState<any>(null);
+  const [editingEvent, setEditingEvent] = useState<any>(null);
+  const [editingProject, setEditingProject] = useState<any>(null);
   const [qrMember, setQrMember] = useState<string | null>(null);
   const [addPreview, setAddPreview] = useState<string | null>(null);
   const [editPreview, setEditPreview] = useState<string | null>(null);
@@ -38,565 +216,3421 @@ export default function AdminClient({ initialData }: { initialData: any }) {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [searchName, setSearchName] = useState('');
 
-  const { members, certificates, events, projects, resignations } = initialData;
-  const pendingCount = (resignations || []).filter((r: any) => r.status === 'pending').length;
+  const {
+    members = [],
+    certificates = [],
+    events = [],
+    projects = [],
+    resignations = [],
+    meetings = [],
+  } = initialData || {};
 
-  const handleAction = async (action: Function, formData: FormData) => {
-    setLoading(true); setMessage('');
-    const res = await action(formData);
-    setMessage(res.error ? `Error: ${res.error}` : 'Success!');
-    if (!res.error) window.location.reload();
-    setLoading(false);
+  const pendingCount = resignations.filter(
+    (r: any) => r.status === 'pending'
+  ).length;
+
+  const handleAction = async (
+    action: (formData: FormData) => Promise<any>,
+    formData: FormData
+  ) => {
+    setLoading(true);
+    setMessage('');
+
+    try {
+      const res = await action(formData);
+
+      if (res?.error) {
+        setMessage(`Error: ${res.error}`);
+      } else {
+        setMessage('Success! Changes saved.');
+        window.location.reload();
+      }
+    } catch {
+      setMessage('Error: Something went wrong. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Delete this member?')) return;
+    if (!confirm('Delete this member? This action cannot be undone.')) return;
+
     setLoading(true);
-    const res = await deleteMember(id);
-    setMessage(res.error ? `Error: ${res.error}` : 'Member deleted.');
-    if (!res.error) window.location.reload();
-    setLoading(false);
+    setMessage('');
+
+    try {
+      const res = await deleteMember(id);
+
+      if (res?.error) {
+        setMessage(`Error: ${res.error}`);
+      } else {
+        window.location.reload();
+      }
+    } catch {
+      setMessage('Error: Unable to delete member.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteEvent = async (id: string) => {
+    if (!confirm('Delete this event? It will also be removed from the public website.')) return;
+
+    setLoading(true);
+    setMessage('');
+
+    try {
+      const res = await deleteEvent(id);
+      if (res?.error) {
+        setMessage(`Error: ${res.error}`);
+      } else {
+        window.location.reload();
+      }
+    } catch {
+      setMessage('Error: Unable to delete event.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteProject = async (id: string) => {
+    if (!confirm('Delete this project? It will also be removed from the public website.')) return;
+
+    setLoading(true);
+    setMessage('');
+
+    try {
+      const res = await deleteProject(id);
+      if (res?.error) {
+        setMessage(`Error: ${res.error}`);
+      } else {
+        window.location.reload();
+      }
+    } catch {
+      setMessage('Error: Unable to delete project.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleApprove = async (id: string) => {
-    if (!confirm('Approve resignation? The member account will be permanently deleted.')) return;
+    if (
+      !confirm(
+        'Approve this resignation? The member account will be permanently deleted.'
+      )
+    ) {
+      return;
+    }
+
     setResLoading(id);
-    const res = await approveResignation(id);
-    if (res.error) setMessage(`Error: ${res.error}`);
-    else window.location.reload();
-    setResLoading(null);
+    setMessage('');
+
+    try {
+      const res = await approveResignation(id);
+
+      if (res?.error) {
+        setMessage(`Error: ${res.error}`);
+      } else {
+        window.location.reload();
+      }
+    } catch {
+      setMessage('Error: Unable to process resignation.');
+    } finally {
+      setResLoading(null);
+    }
   };
 
   const handleReject = async (id: string) => {
     if (!confirm('Reject and remove this resignation request?')) return;
+
     setResLoading(id);
-    const res = await rejectResignation(id);
-    if (res.error) setMessage(`Error: ${res.error}`);
-    else window.location.reload();
-    setResLoading(null);
+    setMessage('');
+
+    try {
+      const res = await rejectResignation(id);
+
+      if (res?.error) {
+        setMessage(`Error: ${res.error}`);
+      } else {
+        window.location.reload();
+      }
+    } catch {
+      setMessage('Error: Unable to reject resignation.');
+    } finally {
+      setResLoading(null);
+    }
   };
 
-  const cardStyle = { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14 } as const;
+  const exportMembers = (filtered: any[]) => {
+    const headers = [
+      'Name',
+      'XTS ID',
+      'Email',
+      'Phone',
+      'Course',
+      'Semester',
+      'Team',
+    ];
+
+    const rows = filtered.map((m: any) => [
+      m.name || '',
+      m.xts_id || '',
+      m.email || '',
+      m.phone || '',
+      m.course || '',
+      m.semester || '',
+      m.team || '',
+    ]);
+
+    const csv = [headers, ...rows]
+      .map((row) =>
+        row
+          .map((value) => `"${String(value).replace(/"/g, '""')}"`)
+          .join(',')
+      )
+      .join('\n');
+
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(
+      new Blob(['\uFEFF', csv], {
+        type: 'text/csv;charset=utf-8;',
+      })
+    );
+    link.download = 'XTS_members_export.csv';
+    link.click();
+    URL.revokeObjectURL(link.href);
+  };
+
+  const handleImageChange = (
+    event: React.ChangeEvent<HTMLInputElement>,
+    setPreview: (value: string | null) => void
+  ) => {
+    const file = event.target.files?.[0];
+
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert('File size exceeds 5MB. Please choose a smaller image.');
+      event.target.value = '';
+      setPreview(null);
+      return;
+    }
+
+    setPreview(URL.createObjectURL(file));
+  };
+
+  const selectedNav = NAV.find((item) => item.id === activeTab);
+
+  const teams = Array.from(
+    new Set(members.map((m: any) => m.team).filter(Boolean))
+  ) as string[];
+
+  const xtsKey = (xtsId: string) => {
+    const parts = (xtsId || '').split('-');
+    const year = parseInt(parts[1] || '0', 10);
+    const number = parseInt(parts[2] || '0', 10);
+
+    return year * 10000 + number;
+  };
+
+  const filteredMembers = [...members]
+    .filter((m: any) => !filterTeam || m.team === filterTeam)
+    .filter((m: any) =>
+      !searchName ||
+      (m.name || '').toLowerCase().includes(searchName.toLowerCase()) ||
+      (m.xts_id || '').toLowerCase().includes(searchName.toLowerCase()) ||
+      (m.email || '').toLowerCase().includes(searchName.toLowerCase())
+    )
+    .sort((a: any, b: any) => {
+      const difference = xtsKey(a.xts_id) - xtsKey(b.xts_id);
+      return sortOrder === 'asc' ? difference : -difference;
+    });
 
   return (
-    <div style={{ display: 'flex', gap: 24 }}>
+    <div className="xts-admin" style={{ color: C.ink, width: '100%' }}>
+      <style>{`
+        .xts-admin,
+        .xts-admin * {
+          box-sizing: border-box;
+        }
 
-      {/* Sidebar */}
-      <aside style={{ width: 210, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
-        {NAV.map(item => {
-          const Icon = item.icon;
-          const active = activeTab === item.id;
-          return (
-            <button
-              key={item.id}
-              onClick={() => setActiveTab(item.id)}
+        .xts-admin input:focus,
+        .xts-admin select:focus,
+        .xts-admin textarea:focus {
+          border-color: ${C.blue} !important;
+          box-shadow: 0 0 0 3px rgba(51, 71, 242, 0.09);
+          outline: none;
+        }
+
+        .xts-admin button:disabled {
+          opacity: 0.55;
+          cursor: not-allowed !important;
+        }
+
+        .xts-admin button:not(:disabled) {
+          -webkit-tap-highlight-color: transparent;
+        }
+
+        .xts-admin .xts-nav-button:hover {
+          background: ${C.blueLight} !important;
+          color: ${C.blue} !important;
+        }
+
+        .xts-admin .xts-table-row:hover {
+          background: #F8F9FF;
+        }
+
+        .xts-admin .xts-action-button:hover {
+          transform: translateY(-1px);
+        }
+
+        .xts-admin .xts-form-grid {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 16px;
+        }
+
+        .xts-admin .xts-admin-layout {
+          display: grid;
+          grid-template-columns: 225px minmax(0, 1fr);
+          gap: 24px;
+          align-items: start;
+        }
+
+        .xts-admin .xts-sidebar {
+          position: sticky;
+          top: 20px;
+        }
+
+        .xts-admin .xts-modal-overlay {
+          position: fixed;
+          inset: 0;
+          z-index: 100;
+          background: rgba(15, 18, 38, 0.48);
+          backdrop-filter: blur(5px);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 16px;
+        }
+
+        @media (max-width: 900px) {
+          .xts-admin .xts-admin-layout {
+            grid-template-columns: 1fr;
+          }
+
+          .xts-admin .xts-sidebar {
+            position: static;
+          }
+
+          .xts-admin .xts-nav-list {
+            display: flex !important;
+            overflow-x: auto;
+            padding-bottom: 6px;
+          }
+
+          .xts-admin .xts-nav-button {
+            min-width: max-content;
+          }
+
+          .xts-admin .xts-nav-description {
+            display: none;
+          }
+        }
+
+        @media (max-width: 600px) {
+          .xts-admin .xts-form-grid {
+            grid-template-columns: 1fr;
+          }
+
+          .xts-admin .xts-main-card {
+            padding: 18px !important;
+          }
+
+          .xts-admin .xts-welcome {
+            padding: 22px !important;
+          }
+
+          .xts-admin .xts-welcome-title {
+            font-size: 25px !important;
+          }
+
+          .xts-admin .xts-profile-row {
+            align-items: flex-start !important;
+          }
+        }
+
+        /* Refined XTS admin visual system */
+        .xts-admin {
+          min-height: 100vh;
+          padding: clamp(16px, 2.5vw, 34px);
+          background:
+            radial-gradient(circle at 8% 0%, rgba(80, 100, 255, 0.07), transparent 28rem),
+            #f6f7fb;
+          font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+          -webkit-font-smoothing: antialiased;
+        }
+
+        .xts-admin h1,
+        .xts-admin h2,
+        .xts-admin h3,
+        .xts-admin p {
+          overflow-wrap: anywhere;
+        }
+
+        .xts-admin button {
+          font-family: inherit;
+          transition: transform .18s ease, box-shadow .18s ease, background .18s ease, border-color .18s ease;
+        }
+
+        .xts-admin button:not(:disabled):hover {
+          box-shadow: 0 5px 14px rgba(28, 43, 105, .08);
+        }
+
+        .xts-admin button:not(:disabled):active {
+          transform: translateY(1px);
+        }
+
+        .xts-admin input,
+        .xts-admin select,
+        .xts-admin textarea {
+          font-family: inherit;
+          min-height: 42px;
+        }
+
+        .xts-admin textarea {
+          min-height: 110px;
+        }
+
+        .xts-admin .xts-admin-layout {
+          grid-template-columns: 248px minmax(0, 1fr);
+          gap: 20px;
+        }
+
+        .xts-admin .xts-sidebar,
+        .xts-admin .xts-main-card {
+          border-color: #e5e8f2 !important;
+          border-radius: 20px !important;
+          box-shadow: 0 10px 35px rgba(24, 34, 75, .045) !important;
+        }
+
+        .xts-admin .xts-sidebar {
+          padding: 14px !important;
+          background: rgba(255,255,255,.92) !important;
+        }
+
+        .xts-admin .xts-main-card {
+          padding: clamp(18px, 2.2vw, 30px) !important;
+          background: rgba(255,255,255,.96) !important;
+        }
+
+        .xts-admin .xts-welcome {
+          border-radius: 24px !important;
+          padding: clamp(24px, 4vw, 42px) !important;
+          box-shadow: 0 14px 42px rgba(42, 57, 160, .055);
+        }
+
+        .xts-admin .xts-welcome-title {
+          max-width: 700px;
+          line-height: 1.08 !important;
+          letter-spacing: -.055em !important;
+        }
+
+        .xts-admin .xts-nav-button {
+          min-height: 58px;
+          padding: 9px 10px !important;
+        }
+
+        .xts-admin .xts-nav-button:hover {
+          transform: translateX(2px);
+        }
+
+        .xts-admin .xts-form-grid {
+          gap: 18px;
+        }
+
+        .xts-admin table th {
+          position: sticky;
+          top: 0;
+          z-index: 1;
+        }
+
+        .xts-admin .xts-table-row:last-child {
+          border-bottom: 0 !important;
+        }
+
+        .xts-admin .xts-modal-overlay {
+          overflow-y: auto;
+          padding: 20px;
+        }
+
+        .xts-admin .xts-modal-overlay > div {
+          max-height: calc(100dvh - 40px);
+          overflow-y: auto;
+        }
+
+        .xts-admin :focus-visible {
+          outline: 3px solid rgba(51, 71, 242, .25);
+          outline-offset: 2px;
+        }
+
+        @media (max-width: 1100px) {
+          .xts-admin .xts-admin-layout {
+            grid-template-columns: 1fr;
+          }
+
+          .xts-admin .xts-sidebar {
+            position: static;
+          }
+
+          .xts-admin .xts-nav-list {
+            display: flex !important;
+            flex-direction: row !important;
+            overflow-x: auto;
+            scrollbar-width: thin;
+            gap: 7px !important;
+          }
+
+          .xts-admin .xts-nav-button {
+            min-width: max-content;
+            width: auto !important;
+          }
+
+          .xts-admin .xts-nav-description {
+            display: none !important;
+          }
+        }
+
+        @media (max-width: 600px) {
+          .xts-admin {
+            padding: 12px;
+          }
+
+          .xts-admin .xts-welcome {
+            border-radius: 18px !important;
+            padding: 22px !important;
+          }
+
+          .xts-admin .xts-welcome-title {
+            font-size: clamp(25px, 7vw, 32px) !important;
+          }
+
+          .xts-admin .xts-main-card {
+            padding: 17px !important;
+            border-radius: 16px !important;
+          }
+
+          .xts-admin .xts-form-grid {
+            grid-template-columns: minmax(0, 1fr) !important;
+          }
+
+          .xts-admin .xts-profile-row {
+            align-items: stretch !important;
+            flex-direction: column;
+          }
+
+          .xts-admin .xts-profile-row > label {
+            width: 92px !important;
+            height: 92px !important;
+          }
+
+          .xts-admin .xts-nav-button {
+            padding: 8px !important;
+          }
+
+          .xts-admin .xts-nav-button > span:nth-child(2) {
+            display: none;
+          }
+
+          .xts-admin .xts-modal-overlay {
+            align-items: flex-start;
+            padding: 12px;
+          }
+
+          .xts-admin .xts-modal-overlay > div {
+            max-height: calc(100dvh - 24px);
+          }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .xts-admin *,
+          .xts-admin *::before,
+          .xts-admin *::after {
+            animation-duration: .01ms !important;
+            animation-iteration-count: 1 !important;
+            scroll-behavior: auto !important;
+            transition-duration: .01ms !important;
+          }
+        }
+
+      `}</style>
+
+      {/* Administration header */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 16,
+          flexWrap: 'wrap',
+          marginBottom: 24,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: 13,
+              background: C.ink,
+              display: 'grid',
+              placeItems: 'center',
+              color: C.white,
+              flexShrink: 0,
+            }}
+          >
+            <ShieldCheck size={23} />
+          </div>
+
+          <div>
+            <p
               style={{
-                display: 'flex', alignItems: 'center', gap: 9, padding: '10px 13px',
-                borderRadius: 10, border: 'none', cursor: 'pointer', textAlign: 'left',
-                background: active ? `${item.color}18` : 'transparent',
-                borderLeft: active ? `2px solid ${item.color}` : '2px solid transparent',
-                color: active ? item.color : '#94a3b8',
-                fontWeight: active ? 600 : 400, fontSize: 13, width: '100%',
-                transition: 'all 0.15s',
+                margin: '0 0 3px',
+                color: C.muted,
+                fontSize: 10,
+                fontWeight: 800,
+                letterSpacing: '0.14em',
+                textTransform: 'uppercase',
               }}
             >
-              <Icon style={{ width: 15, height: 15, flexShrink: 0 }} />
-              {item.label}
-              {item.id === 'resignations' && pendingCount > 0 && (
-                <span style={{ marginLeft: 'auto', fontSize: 10, background: '#f87171', color: '#fff', borderRadius: 6, padding: '1px 6px' }}>{pendingCount}</span>
-              )}
-            </button>
+              Xavier Tech Byte Society
+            </p>
+            <h1
+              style={{
+                margin: 0,
+                fontSize: 21,
+                color: C.ink,
+                fontWeight: 800,
+                letterSpacing: '-0.04em',
+              }}
+            >
+              Administration
+            </h1>
+          </div>
+        </div>
+
+        <div
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 7,
+            border: `1px solid ${C.border}`,
+            background: C.white,
+            padding: '8px 12px',
+            borderRadius: 10,
+            color: C.muted,
+            fontSize: 11,
+            fontWeight: 700,
+          }}
+        >
+          <Shield size={14} color={C.blue} />
+          SECURE ADMIN ACCESS
+        </div>
+      </div>
+
+      {/* Administrative welcome banner */}
+      <section
+        className="xts-welcome"
+        style={{
+          position: 'relative',
+          overflow: 'hidden',
+          borderRadius: 20,
+          padding: 30,
+          marginBottom: 26,
+          background:
+            'linear-gradient(115deg, #FFFFFF 0%, #F2F3FF 60%, #E9ECFF 100%)',
+          border: `1px solid ${C.border}`,
+        }}
+      >
+        <div
+          style={{
+            position: 'absolute',
+            right: -25,
+            top: -65,
+            width: 230,
+            height: 230,
+            border: '1px solid rgba(51,71,242,0.11)',
+            borderRadius: '50%',
+            pointerEvents: 'none',
+          }}
+        />
+
+        <div
+          style={{
+            position: 'absolute',
+            right: 25,
+            top: -20,
+            width: 145,
+            height: 145,
+            border: '1px solid rgba(51,71,242,0.11)',
+            borderRadius: '50%',
+            pointerEvents: 'none',
+          }}
+        />
+
+        <div style={{ position: 'relative', zIndex: 1, maxWidth: 690 }}>
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 7,
+              padding: '6px 10px',
+              borderRadius: 7,
+              background: C.white,
+              border: `1px solid ${C.border}`,
+              color: C.blue,
+              fontSize: 10,
+              fontWeight: 800,
+              letterSpacing: '0.1em',
+              marginBottom: 17,
+            }}
+          >
+            <Sparkles size={13} />
+            XTS OPERATIONS CENTER
+          </div>
+
+          <h2
+            className="xts-welcome-title"
+            style={{
+              margin: 0,
+              color: C.ink,
+              fontSize: 34,
+              lineHeight: 1.15,
+              fontWeight: 850,
+              letterSpacing: '-0.055em',
+            }}
+          >
+            Welcome back, Administrator.
+          </h2>
+
+          <p
+            style={{
+              maxWidth: 610,
+              margin: '13px 0 20px',
+              color: C.muted,
+              fontSize: 14,
+              lineHeight: 1.8,
+            }}
+          >
+            Your leadership drives the people, programmes, and progress of
+            Xavier Tech Byte Society. Manage member records, coordinate
+            meetings, oversee projects, issue certificates, and review
+            administrative requests from one central workspace.
+          </p>
+
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 9 }}>
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                color: C.ink,
+                background: C.white,
+                border: `1px solid ${C.border}`,
+                borderRadius: 8,
+                padding: '8px 11px',
+                fontSize: 11,
+                fontWeight: 700,
+              }}
+            >
+              <ShieldCheck size={14} color={C.blue} />
+              Administrative Workspace
+            </span>
+
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                color: C.ink,
+                background: C.white,
+                border: `1px solid ${C.border}`,
+                borderRadius: 8,
+                padding: '8px 11px',
+                fontSize: 11,
+                fontWeight: 700,
+              }}
+            >
+              <Users size={14} color={C.blue} />
+              Member Operations
+            </span>
+          </div>
+        </div>
+      </section>
+
+      {/* Overview cards */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(145px, 1fr))',
+          gap: 13,
+          marginBottom: 26,
+        }}
+      >
+        {[
+          {
+            label: 'Total Members',
+            value: members.length,
+            icon: Users,
+            color: C.blue,
+            bg: C.blueLight,
+          },
+          {
+            label: 'Meetings',
+            value: meetings.length,
+            icon: Video,
+            color: '#7251C8',
+            bg: '#F2EDFF',
+          },
+          {
+            label: 'Certificates',
+            value: certificates.length,
+            icon: FileBadge,
+            color: '#A56A00',
+            bg: '#FFF5DE',
+          },
+          {
+            label: 'Projects',
+            value: projects.length,
+            icon: FolderGit2,
+            color: C.green,
+            bg: C.greenBg,
+          },
+          {
+            label: 'Pending Requests',
+            value: pendingCount,
+            icon: Clock,
+            color: pendingCount ? C.red : C.green,
+            bg: pendingCount ? C.redBg : C.greenBg,
+          },
+        ].map((item) => {
+          const Icon = item.icon;
+
+          return (
+            <div
+              key={item.label}
+              style={{
+                ...cardStyle,
+                padding: 17,
+                minWidth: 0,
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 8,
+                  marginBottom: 17,
+                }}
+              >
+                <span
+                  style={{
+                    color: C.muted,
+                    fontSize: 11,
+                    fontWeight: 700,
+                    lineHeight: 1.4,
+                  }}
+                >
+                  {item.label}
+                </span>
+
+                <span
+                  style={{
+                    width: 32,
+                    height: 32,
+                    display: 'grid',
+                    placeItems: 'center',
+                    borderRadius: 9,
+                    background: item.bg,
+                    color: item.color,
+                    flexShrink: 0,
+                  }}
+                >
+                  <Icon size={16} />
+                </span>
+              </div>
+
+              <div
+                style={{
+                  color: C.ink,
+                  fontSize: 28,
+                  fontWeight: 850,
+                  letterSpacing: '-0.05em',
+                }}
+              >
+                {item.value}
+              </div>
+            </div>
           );
         })}
-      </aside>
+      </div>
 
-      {/* Content */}
-      <div style={{ flex: 1 }}>
-        {message && (
-          <div style={{ padding: '10px 16px', marginBottom: 16, borderRadius: 10, fontSize: 13, background: message.startsWith('Error') ? 'rgba(248,113,113,0.1)' : 'rgba(52,211,153,0.1)', border: `1px solid ${message.startsWith('Error') ? 'rgba(248,113,113,0.3)' : 'rgba(52,211,153,0.3)'}`, color: message.startsWith('Error') ? '#f87171' : '#34d399' }}>
-            {message}
+      {/* Main administration workspace */}
+      <div className="xts-admin-layout">
+        {/* Sidebar */}
+        <aside
+          className="xts-sidebar"
+          style={{
+            ...cardStyle,
+            padding: 12,
+          }}
+        >
+          <div
+            style={{
+              padding: '10px 10px 14px',
+              borderBottom: `1px solid ${C.border}`,
+              marginBottom: 9,
+            }}
+          >
+            <p
+              style={{
+                margin: 0,
+                fontSize: 10,
+                color: C.subtle,
+                letterSpacing: '0.13em',
+                fontWeight: 800,
+              }}
+            >
+              WORKSPACE
+            </p>
+            <p
+              style={{
+                margin: '5px 0 0',
+                fontSize: 13,
+                fontWeight: 800,
+                color: C.ink,
+              }}
+            >
+              Manage XTS
+            </p>
           </div>
-        )}
 
-        <div style={{ ...cardStyle, padding: 24 }}>
+          <nav
+            className="xts-nav-list"
+            style={{ display: 'flex', flexDirection: 'column', gap: 4 }}
+          >
+            {NAV.map((item) => {
+              const Icon = item.icon;
+              const active = activeTab === item.id;
 
-          {/* ── ADD MEMBER ─────────────────── */}
-          {activeTab === 'members' && (
-            <div>
-              <h2 style={{ fontSize: 18, fontWeight: 700, color: '#fff', marginBottom: 20 }}>Add New Member</h2>
-              <form action={(f) => handleAction(createMember, f)} style={{ display: 'flex', flexDirection: 'column', gap: 14, maxWidth: 560 }}>
-                
-                <div style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
-                  <label style={{ width: 100, height: 100, borderRadius: 12, border: '2px dashed rgba(255,255,255,0.2)', background: 'rgba(255,255,255,0.02)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', overflow: 'hidden', flexShrink: 0 }}>
-                    <input type="file" name="profile_image" accept="image/*" style={{ display: 'none' }} onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        if (file.size > 5 * 1024 * 1024) {
-                          alert('File size exceeds 5MB limit. Please select a smaller image.');
-                          e.target.value = '';
-                          setAddPreview(null);
-                          return;
-                        }
-                        setAddPreview(URL.createObjectURL(file));
-                      }
-                    }} />
-                    {addPreview ? <img src={addPreview} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ textAlign: 'center', color: '#94a3b8' }}><Plus style={{ margin: '0 auto' }} /><span style={{ fontSize: 10, display: 'block', marginTop: 2 }}>Photo</span></div>}
-                  </label>
-                  
-                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 14 }}>
-                    <div>
-                      <label style={{ display: 'block', fontSize: 12, color: '#94a3b8', marginBottom: 6 }}>Full Name</label>
-                      <input name="name" required className={inputCls} style={inputStyle} />
-                    </div>
-                    <div>
-                      <label style={{ display: 'block', fontSize: 12, color: '#94a3b8', marginBottom: 6 }}>Email</label>
-                      <input name="email" type="email" required className={inputCls} style={inputStyle} />
-                    </div>
-                  </div>
-                </div>
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  className="xts-nav-button"
+                  onClick={() => setActiveTab(item.id)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 11,
+                    padding: '11px 10px',
+                    width: '100%',
+                    textAlign: 'left',
+                    borderRadius: 10,
+                    border: `1px solid ${active ? '#DDE2FF' : 'transparent'}`,
+                    background: active ? C.blueLight : 'transparent',
+                    color: active ? C.blue : C.muted,
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  <span
+                    style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: 9,
+                      display: 'grid',
+                      placeItems: 'center',
+                      flexShrink: 0,
+                      background: active ? C.white : '#F5F6FB',
+                      border: `1px solid ${active ? '#DDE2FF' : C.border}`,
+                    }}
+                  >
+                    <Icon size={16} />
+                  </span>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-                  {[
-                    { name: 'xts_id', label: 'XTS ID', req: true, placeholder: 'XTS-XXXX' },
-                    { name: 'phone', label: 'Phone' },
-                    { name: 'course', label: 'Course' },
-                    { name: 'team', label: 'Team' },
-                    { name: 'semester', label: 'Semester' },
-                  ].map((f: { name: string; label: string; req?: boolean; placeholder?: string; type?: string; val?: any }) => (
-                    <div key={f.name}>
-                      <label style={{ display: 'block', fontSize: 12, color: '#94a3b8', marginBottom: 6 }}>{f.label}</label>
-                      <input name={f.name} type={f.type || 'text'} required={!!f.req} placeholder={f.placeholder} className={inputCls} style={inputStyle} />
-                    </div>
-                  ))}
-                </div>
-                
-                <button type="submit" disabled={loading} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: '11px', borderRadius: 10, border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg, #3b82f6, #6366f1)', color: '#fff', fontWeight: 600, fontSize: 14, marginTop: 4 }}>
-                  {loading ? <Loader2 style={{ width: 16, height: 16 }} className="animate-spin" /> : <><Plus style={{ width: 15, height: 15 }} /> Add Member</>}
+                  <span style={{ flex: 1, minWidth: 0 }}>
+                    <span
+                      style={{
+                        display: 'block',
+                        fontSize: 12,
+                        fontWeight: active ? 800 : 650,
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {item.label}
+                    </span>
+                    <span
+                      className="xts-nav-description"
+                      style={{
+                        display: 'block',
+                        fontSize: 10,
+                        marginTop: 4,
+                        color: active ? '#5A67C8' : C.subtle,
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {item.description}
+                    </span>
+                  </span>
+
+                  {item.id === 'resignations' && pendingCount > 0 && (
+                    <span
+                      style={{
+                        minWidth: 21,
+                        height: 21,
+                        borderRadius: 7,
+                        display: 'grid',
+                        placeItems: 'center',
+                        padding: '0 5px',
+                        background: C.red,
+                        color: C.white,
+                        fontSize: 10,
+                        fontWeight: 800,
+                      }}
+                    >
+                      {pendingCount}
+                    </span>
+                  )}
+
+                  {active && (
+                    <ChevronRight
+                      size={14}
+                      style={{ flexShrink: 0 }}
+                    />
+                  )}
                 </button>
-              </form>
+              );
+            })}
+          </nav>
+
+          <div
+            style={{
+              marginTop: 15,
+              padding: 12,
+              borderRadius: 10,
+              background: '#F7F8FC',
+              border: `1px solid ${C.border}`,
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 7,
+                color: C.ink,
+                fontSize: 11,
+                fontWeight: 800,
+              }}
+            >
+              <ShieldCheck size={15} color={C.blue} />
+              Official Workspace
+            </div>
+            <p
+              style={{
+                color: C.muted,
+                fontSize: 10,
+                lineHeight: 1.6,
+                margin: '7px 0 0',
+              }}
+            >
+              Handle member records and society operations responsibly.
+            </p>
+          </div>
+        </aside>
+
+        {/* Main content */}
+        <main style={{ minWidth: 0 }}>
+          {message && (
+            <div
+              role="status"
+              style={{
+                padding: '13px 15px',
+                marginBottom: 16,
+                borderRadius: 11,
+                fontSize: 12,
+                fontWeight: 650,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 9,
+                background: message.startsWith('Error')
+                  ? C.redBg
+                  : C.greenBg,
+                border: `1px solid ${
+                  message.startsWith('Error') ? '#F5CDD1' : '#C9EAD9'
+                }`,
+                color: message.startsWith('Error') ? C.red : C.green,
+              }}
+            >
+              {message.startsWith('Error') ? (
+                <XCircle size={16} />
+              ) : (
+                <CheckCircle2 size={16} />
+              )}
+              {message}
             </div>
           )}
 
-          {/* ── VIEW MEMBERS ───────────────── */}
-          {activeTab === 'view_members' && (() => {
-            // Collect unique teams
-            const teams = Array.from(new Set((members as any[]).map((m: any) => m.team).filter(Boolean))) as string[];
+          <section
+            className="xts-main-card"
+            style={{
+              ...cardStyle,
+              padding: 25,
+              minWidth: 0,
+            }}
+          >
+            {/* Section title */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                marginBottom: 24,
+                paddingBottom: 19,
+                borderBottom: `1px solid ${C.border}`,
+              }}
+            >
+              <div
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 11,
+                  background: C.blueLight,
+                  color: C.blue,
+                  display: 'grid',
+                  placeItems: 'center',
+                  flexShrink: 0,
+                }}
+              >
+                {selectedNav &&
+                  (() => {
+                    const Icon = selectedNav.icon;
+                    return <Icon size={19} />;
+                  })()}
+              </div>
 
-            // Helper: parse XTS-YY-NNN → numeric sort key
-            const xtsKey = (xts_id: string) => {
-              const parts = (xts_id || '').split('-');
-              const year = parseInt(parts[1] || '0', 10);
-              const num  = parseInt(parts[2] || '0', 10);
-              return year * 10000 + num;
-            };
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <h2
+                  style={{
+                    margin: 0,
+                    fontSize: 17,
+                    fontWeight: 850,
+                    color: C.ink,
+                    letterSpacing: '-0.03em',
+                  }}
+                >
+                  {selectedNav?.label}
+                </h2>
+                <p
+                  style={{
+                    margin: '4px 0 0',
+                    color: C.muted,
+                    fontSize: 11,
+                  }}
+                >
+                  {selectedNav?.description}
+                </p>
+              </div>
 
-            const filtered = (members as any[])
-              .filter((m: any) => !filterTeam || m.team === filterTeam)
-              .filter((m: any) => !searchName || m.name.toLowerCase().includes(searchName.toLowerCase()))
-              .sort((a: any, b: any) => {
-                const diff = xtsKey(a.xts_id) - xtsKey(b.xts_id);
-                return sortOrder === 'asc' ? diff : -diff;
-              });
+              <span
+                style={{
+                  color: C.subtle,
+                  fontSize: 10,
+                  fontWeight: 700,
+                  letterSpacing: '0.06em',
+                }}
+              >
+                XTS ADMIN
+              </span>
+            </div>
 
-            return (
+            {/* ADD MEMBER */}
+            {activeTab === 'members' && (
               <div>
-                {/* ── Top bar ── */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
-                  <h2 style={{ fontSize: 18, fontWeight: 700, color: '#fff', margin: 0 }}>
-                    Members ({filtered.length}{filterTeam ? ` · ${filterTeam}` : ''}{searchName ? ` · "${searchName}"` : ''})
-                  </h2>
-                  <button
-                    onClick={() => {
-                      const headers = ['Name', 'XTS ID', 'Email', 'Phone', 'Course', 'Semester', 'Team'];
-                      const rows = filtered.map((m: any) => [
-                        m.name || '', m.xts_id || '', m.email || '', m.phone || '',
-                        m.course || '', m.semester || '', m.team || '',
-                      ]);
-                      const csv = [headers, ...rows].map(r => r.map(v => `"${(v||'').toString().replace(/"/g,'""')}"`).join(',')).join('\n');
-                      const link = document.createElement('a');
-                      link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
-                      link.download = 'members_export.csv';
-                      link.click();
+                <SectionHeading
+                  eyebrow="Member management"
+                  title="Register a new member"
+                  description="Create an XTS member record and add their basic details."
+                />
+
+                <form
+                  action={(formData) =>
+                    handleAction(createMember, formData)
+                  }
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 18,
+                    maxWidth: 620,
+                  }}
+                >
+                  <div
+                    className="xts-profile-row"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 18,
                     }}
-                    style={{ background: '#10b981', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: 13 }}
                   >
-                    Export to Excel (CSV)
+                    <label
+                      style={{
+                        width: 105,
+                        height: 105,
+                        borderRadius: 14,
+                        border: `1px dashed #BCC4E6`,
+                        background: '#F8F9FF',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        overflow: 'hidden',
+                        flexShrink: 0,
+                      }}
+                    >
+                      <input
+                        type="file"
+                        name="profile_image"
+                        accept="image/*"
+                        style={{ display: 'none' }}
+                        onChange={(e) =>
+                          handleImageChange(e, setAddPreview)
+                        }
+                      />
+
+                      {addPreview ? (
+                        <img
+                          src={addPreview}
+                          alt="Member photo preview"
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                          }}
+                        />
+                      ) : (
+                        <div style={{ textAlign: 'center', color: C.muted }}>
+                          <UserPlus
+                            size={23}
+                            style={{ margin: '0 auto 7px' }}
+                          />
+                          <span style={{ display: 'block', fontSize: 10 }}>
+                            Add Photo
+                          </span>
+                        </div>
+                      )}
+                    </label>
+
+                    <div
+                      style={{
+                        flex: 1,
+                        minWidth: 0,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 14,
+                      }}
+                    >
+                      <Field label="Full Name">
+                        <input
+                          name="name"
+                          required
+                          placeholder="Enter full name"
+                          style={inputStyle}
+                        />
+                      </Field>
+
+                      <Field label="Email Address">
+                        <input
+                          name="email"
+                          type="email"
+                          required
+                          placeholder="name@example.com"
+                          style={inputStyle}
+                        />
+                      </Field>
+                    </div>
+                  </div>
+
+                  <div className="xts-form-grid">
+                    {[
+                      {
+                        name: 'xts_id',
+                        label: 'XTS ID',
+                        required: true,
+                        placeholder: 'XTS-XXXX',
+                      },
+                      {
+                        name: 'phone',
+                        label: 'Phone Number',
+                        placeholder: 'Enter phone number',
+                      },
+                      {
+                        name: 'course',
+                        label: 'Course',
+                        placeholder: 'e.g. BCA',
+                      },
+                      {
+                        name: 'team',
+                        label: 'Team',
+                        placeholder: 'e.g. Development',
+                      },
+                      {
+                        name: 'semester',
+                        label: 'Semester',
+                        placeholder: 'e.g. 5',
+                      },
+                    ].map((field) => (
+                      <Field key={field.name} label={field.label}>
+                        <input
+                          name={field.name}
+                          required={field.required}
+                          placeholder={field.placeholder}
+                          style={inputStyle}
+                        />
+                      </Field>
+                    ))}
+                  </div>
+
+                  <div
+                    style={{
+                      padding: 12,
+                      borderRadius: 10,
+                      background: '#F7F8FC',
+                      color: C.muted,
+                      fontSize: 11,
+                      lineHeight: 1.6,
+                    }}
+                  >
+                    <ShieldCheck
+                      size={14}
+                      style={{
+                        display: 'inline',
+                        verticalAlign: 'middle',
+                        marginRight: 6,
+                        color: C.blue,
+                      }}
+                    />
+                    Please verify the member's details before creating the
+                    record. Profile images must be no larger than 5 MB.
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    style={{
+                      ...primaryButtonStyle,
+                      width: '100%',
+                      marginTop: 2,
+                    }}
+                  >
+                    {loading ? (
+                      <Loader2 size={16} className="animate-spin" />
+                    ) : (
+                      <Plus size={16} />
+                    )}
+                    {loading ? 'Creating member...' : 'Create Member Record'}
+                  </button>
+                </form>
+              </div>
+            )}
+
+            {/* VIEW MEMBERS */}
+            {activeTab === 'view_members' && (
+              <div>
+                <SectionHeading
+                  eyebrow="Member directory"
+                  title="Member records"
+                  description="Search, filter, export, edit, and manage XTS member profiles."
+                />
+
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: 12,
+                    flexWrap: 'wrap',
+                    marginBottom: 16,
+                  }}
+                >
+                  <div>
+                    <p
+                      style={{
+                        color: C.ink,
+                        fontWeight: 800,
+                        fontSize: 13,
+                        margin: 0,
+                      }}
+                    >
+                      {filteredMembers.length} member
+                      {filteredMembers.length !== 1 ? 's' : ''} found
+                    </p>
+                    <p
+                      style={{
+                        color: C.muted,
+                        fontSize: 11,
+                        margin: '4px 0 0',
+                      }}
+                    >
+                      {filterTeam || searchName
+                        ? 'Filtered results'
+                        : 'Showing all registered members'}
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => exportMembers(filteredMembers)}
+                    style={secondaryButtonStyle}
+                  >
+                    <Download size={14} color={C.blue} />
+                    Export CSV
                   </button>
                 </div>
 
-                {/* ── Search + Filter + Sort controls ── */}
-                <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
-
-                  {/* Search by name */}
-                  <div style={{ position: 'relative', flexGrow: 1, minWidth: 180, maxWidth: 300 }}>
-                    <span style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#64748b', pointerEvents: 'none', fontSize: 14 }}>🔍</span>
+                {/* Search, filter, and sort */}
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 9,
+                    flexWrap: 'wrap',
+                    marginBottom: 18,
+                  }}
+                >
+                  <div style={{ position: 'relative', flex: '1 1 210px' }}>
+                    <Search
+                      size={15}
+                      style={{
+                        position: 'absolute',
+                        left: 12,
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        color: C.subtle,
+                      }}
+                    />
                     <input
                       type="text"
-                      placeholder="Search by name..."
+                      placeholder="Search name, XTS ID or email..."
                       value={searchName}
-                      onChange={e => setSearchName(e.target.value)}
-                      style={{ width: '100%', paddingLeft: 32, paddingRight: searchName ? 32 : 12, paddingTop: 7, paddingBottom: 7, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', color: '#fff', borderRadius: 8, fontSize: 13, outline: 'none', boxSizing: 'border-box' }}
+                      onChange={(e) => setSearchName(e.target.value)}
+                      style={{
+                        ...inputStyle,
+                        paddingLeft: 36,
+                      }}
                     />
-                    {searchName && (
-                      <button onClick={() => setSearchName('')} style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#64748b', padding: 0, lineHeight: 1 }}>✕</button>
-                    )}
                   </div>
 
-                  {/* Team filter */}
                   <select
                     value={filterTeam}
-                    onChange={e => setFilterTeam(e.target.value)}
-                    style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', color: '#fff', borderRadius: 8, padding: '7px 12px', fontSize: 13, cursor: 'pointer', minWidth: 160 }}
+                    onChange={(e) => setFilterTeam(e.target.value)}
+                    style={{
+                      ...inputStyle,
+                      width: 'auto',
+                      minWidth: 145,
+                      cursor: 'pointer',
+                    }}
                   >
                     <option value="">All Teams</option>
-                    {teams.map(t => <option key={t} value={t}>{t} Team</option>)}
+                    {teams.map((team) => (
+                      <option key={team} value={team}>
+                        {team}
+                      </option>
+                    ))}
                   </select>
 
-                  {/* Sort toggle */}
                   <button
-                    onClick={() => setSortOrder(s => s === 'asc' ? 'desc' : 'asc')}
-                    style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', color: '#cbd5e1', borderRadius: 8, padding: '7px 14px', fontSize: 13, cursor: 'pointer', fontWeight: 500 }}
+                    type="button"
+                    onClick={() =>
+                      setSortOrder((current) =>
+                        current === 'asc' ? 'desc' : 'asc'
+                      )
+                    }
+                    style={secondaryButtonStyle}
                   >
-                    XTS ID: {sortOrder === 'asc' ? '↑ Ascending' : '↓ Descending'}
+                    <ArrowUpDown size={14} />
+                    {sortOrder === 'asc' ? 'ID: Ascending' : 'ID: Descending'}
                   </button>
 
-                  {/* Clear all filters */}
                   {(filterTeam || searchName) && (
                     <button
-                      onClick={() => { setFilterTeam(''); setSearchName(''); }}
-                      style={{ background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.2)', color: '#f87171', borderRadius: 8, padding: '7px 12px', fontSize: 13, cursor: 'pointer' }}
+                      type="button"
+                      onClick={() => {
+                        setFilterTeam('');
+                        setSearchName('');
+                      }}
+                      style={{
+                        ...secondaryButtonStyle,
+                        color: C.red,
+                        borderColor: '#F2CDD1',
+                      }}
                     >
-                      ✕ Clear All
+                      <X size={13} />
+                      Clear
                     </button>
                   )}
                 </div>
 
-                {/* ── Table ── */}
-                <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 12, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.07)' }}>
+                {/* Members table */}
+                <div
+                  style={{
+                    border: `1px solid ${C.border}`,
+                    borderRadius: 12,
+                    overflow: 'hidden',
+                  }}
+                >
                   <div style={{ overflowX: 'auto' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 13 }}>
+                    <table
+                      style={{
+                        width: '100%',
+                        minWidth: 720,
+                        borderCollapse: 'collapse',
+                        textAlign: 'left',
+                        fontSize: 12,
+                      }}
+                    >
                       <thead>
-                        <tr style={{ background: 'rgba(255,255,255,0.05)', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                          <th style={{ padding: '12px 16px', color: '#94a3b8', fontWeight: 600 }}>Member</th>
-                          <th style={{ padding: '12px 16px', color: '#94a3b8', fontWeight: 600 }}>XTS ID</th>
-                          <th style={{ padding: '12px 16px', color: '#94a3b8', fontWeight: 600 }}>Contact</th>
-                          <th style={{ padding: '12px 16px', color: '#94a3b8', fontWeight: 600 }}>Details</th>
-                          <th style={{ padding: '12px 16px', color: '#94a3b8', fontWeight: 600, textAlign: 'right' }}>Actions</th>
+                        <tr style={{ background: '#F7F8FC' }}>
+                          {[
+                            'Member',
+                            'XTS ID',
+                            'Contact',
+                            'Details',
+                            'Actions',
+                          ].map((heading) => (
+                            <th
+                              key={heading}
+                              style={{
+                                padding: '13px 14px',
+                                color: C.muted,
+                                fontSize: 10,
+                                fontWeight: 800,
+                                letterSpacing: '0.06em',
+                                textTransform: 'uppercase',
+                                borderBottom: `1px solid ${C.border}`,
+                                textAlign:
+                                  heading === 'Actions' ? 'right' : 'left',
+                              }}
+                            >
+                              {heading}
+                            </th>
+                          ))}
                         </tr>
                       </thead>
+
                       <tbody>
-                        {filtered.length === 0 ? (
+                        {filteredMembers.length === 0 ? (
                           <tr>
-                            <td colSpan={5} style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}>
-                              No members found{filterTeam ? ` in "${filterTeam}" team` : ''}.
+                            <td
+                              colSpan={5}
+                              style={{
+                                padding: 45,
+                                textAlign: 'center',
+                                color: C.muted,
+                              }}
+                            >
+                              <Users
+                                size={27}
+                                style={{ margin: '0 auto 10px', opacity: 0.5 }}
+                              />
+                              No members match your search.
                             </td>
                           </tr>
-                        ) : filtered.map((m: any) => (
-                          <tr key={m._id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                            <td style={{ padding: '16px' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-                                  <div style={{ height: 80, width: 80, borderRadius: 12, background: 'rgba(59,130,246,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0, border: '1px solid rgba(255,255,255,0.1)' }}>
-                                    {m.profile_image ? <img src={m.profile_image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <Users style={{ width: 28, height: 28, color: '#60a5fa' }} />}
+                        ) : (
+                          filteredMembers.map((member: any) => (
+                            <tr
+                              key={member._id}
+                              className="xts-table-row"
+                              style={{
+                                borderBottom: `1px solid ${C.border}`,
+                                transition: 'background 0.15s',
+                              }}
+                            >
+                              <td style={{ padding: 14 }}>
+                                <div
+                                  style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 10,
+                                  }}
+                                >
+                                  <div
+                                    style={{
+                                      width: 43,
+                                      height: 43,
+                                      borderRadius: 11,
+                                      background: C.blueLight,
+                                      border: `1px solid ${C.border}`,
+                                      display: 'grid',
+                                      placeItems: 'center',
+                                      overflow: 'hidden',
+                                      flexShrink: 0,
+                                    }}
+                                  >
+                                    {member.profile_image ? (
+                                      <img
+                                        src={member.profile_image}
+                                        alt={member.name || 'Member'}
+                                        style={{
+                                          width: '100%',
+                                          height: '100%',
+                                          objectFit: 'cover',
+                                        }}
+                                      />
+                                    ) : (
+                                      <Users size={18} color={C.blue} />
+                                    )}
                                   </div>
-                                  {m.profile_image && (
-                                    <a
-                                      href={m.profile_image}
-                                      download={`${m.name.replace(/\s+/g, '_')}_photo`}
-                                      title="Download Photo"
-                                      style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#60a5fa', textDecoration: 'none', background: 'rgba(59,130,246,0.1)', padding: '3px 8px', borderRadius: 6, border: '1px solid rgba(59,130,246,0.2)' }}
+
+                                  <div style={{ minWidth: 0 }}>
+                                    <p
+                                      style={{
+                                        color: C.ink,
+                                        fontWeight: 800,
+                                        fontSize: 12,
+                                        margin: 0,
+                                      }}
                                     >
-                                      <Download style={{ width: 10, height: 10 }} /> Photo
-                                    </a>
-                                  )}
+                                      {member.name || 'Unnamed member'}
+                                    </p>
+
+                                    {member.profile_image && (
+                                      <a
+                                        href={member.profile_image}
+                                        download={`${(member.name || 'member').replace(/\s+/g, '_')}_photo`}
+                                        style={{
+                                          display: 'inline-flex',
+                                          alignItems: 'center',
+                                          gap: 4,
+                                          marginTop: 5,
+                                          color: C.blue,
+                                          textDecoration: 'none',
+                                          fontSize: 10,
+                                          fontWeight: 700,
+                                        }}
+                                      >
+                                        <Download size={10} />
+                                        Photo
+                                      </a>
+                                    )}
+                                  </div>
                                 </div>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                                  <span style={{ color: '#fff', fontWeight: 700, fontSize: 16 }}>{m.name}</span>
+                              </td>
+
+                              <td
+                                style={{
+                                  padding: '14px',
+                                  color: C.ink,
+                                  fontFamily: 'monospace',
+                                  fontWeight: 800,
+                                  whiteSpace: 'nowrap',
+                                }}
+                              >
+                                {member.xts_id || '—'}
+                              </td>
+
+                              <td style={{ padding: '14px', color: C.ink }}>
+                                <div style={{ fontWeight: 650 }}>
+                                  {member.email || '—'}
                                 </div>
-                              </div>
-                            </td>
-                            <td style={{ padding: '12px 16px', color: '#cbd5e1', fontFamily: 'monospace', fontWeight: 600 }}>{m.xts_id}</td>
-                            <td style={{ padding: '12px 16px', color: '#cbd5e1' }}>
-                              <div>{m.email}</div>
-                              <div style={{ color: '#64748b', fontSize: 11 }}>{m.phone}</div>
-                            </td>
-                            <td style={{ padding: '12px 16px', color: '#cbd5e1' }}>
-                              <div>{m.course} {m.semester && `(Sem ${m.semester})`}</div>
-                              {m.team && <div style={{ color: '#60a5fa', fontSize: 11 }}>{m.team} Team</div>}
-                            </td>
-                            <td style={{ padding: '12px 16px', textAlign: 'right' }}>
-                              <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
-                                <button onClick={() => setQrMember(m._id)} title="Show QR Code" style={{ padding: '6px', borderRadius: 8, border: 'none', cursor: 'pointer', background: 'rgba(59,130,246,0.1)', color: '#60a5fa' }}><QrCode style={{ width: 14, height: 14 }} /></button>
-                                <button onClick={() => setEditingMember(m)} title="Edit" style={{ padding: '6px', borderRadius: 8, border: 'none', cursor: 'pointer', background: 'rgba(255,255,255,0.07)', color: '#94a3b8' }}><Pencil style={{ width: 14, height: 14 }} /></button>
-                                <button onClick={() => handleDelete(m._id)} title="Delete" style={{ padding: '6px', borderRadius: 8, border: 'none', cursor: 'pointer', background: 'rgba(248,113,113,0.1)', color: '#f87171' }}><Trash2 style={{ width: 14, height: 14 }} /></button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
+                                <div
+                                  style={{
+                                    color: C.muted,
+                                    fontSize: 11,
+                                    marginTop: 4,
+                                  }}
+                                >
+                                  {member.phone || 'No phone'}
+                                </div>
+                              </td>
+
+                              <td style={{ padding: '14px', color: C.ink }}>
+                                <div>
+                                  {member.course || '—'}
+                                  {member.semester
+                                    ? ` · Sem ${member.semester}`
+                                    : ''}
+                                </div>
+                                {member.team && (
+                                  <span
+                                    style={{
+                                      display: 'inline-block',
+                                      marginTop: 5,
+                                      color: C.blue,
+                                      background: C.blueLight,
+                                      padding: '3px 7px',
+                                      borderRadius: 5,
+                                      fontSize: 10,
+                                      fontWeight: 700,
+                                    }}
+                                  >
+                                    {member.team}
+                                  </span>
+                                )}
+                              </td>
+
+                              <td
+                                style={{
+                                  padding: '14px',
+                                  textAlign: 'right',
+                                }}
+                              >
+                                <div
+                                  style={{
+                                    display: 'flex',
+                                    justifyContent: 'flex-end',
+                                    gap: 5,
+                                  }}
+                                >
+                                  <button
+                                    type="button"
+                                    title="Show QR Code"
+                                    onClick={() => setQrMember(member._id)}
+                                    className="xts-action-button"
+                                    style={{
+                                      width: 31,
+                                      height: 31,
+                                      display: 'grid',
+                                      placeItems: 'center',
+                                      border: `1px solid ${C.border}`,
+                                      borderRadius: 8,
+                                      cursor: 'pointer',
+                                      background: C.blueLight,
+                                      color: C.blue,
+                                    }}
+                                  >
+                                    <QrCode size={14} />
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    title="Edit member"
+                                    onClick={() => {
+                                      setEditingMember(member);
+                                      setEditPreview(null);
+                                    }}
+                                    className="xts-action-button"
+                                    style={{
+                                      width: 31,
+                                      height: 31,
+                                      display: 'grid',
+                                      placeItems: 'center',
+                                      border: `1px solid ${C.border}`,
+                                      borderRadius: 8,
+                                      cursor: 'pointer',
+                                      background: C.white,
+                                      color: C.muted,
+                                    }}
+                                  >
+                                    <Pencil size={14} />
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    title="Delete member"
+                                    onClick={() => handleDelete(member._id)}
+                                    className="xts-action-button"
+                                    style={{
+                                      width: 31,
+                                      height: 31,
+                                      display: 'grid',
+                                      placeItems: 'center',
+                                      border: '1px solid #F2CDD1',
+                                      borderRadius: 8,
+                                      cursor: 'pointer',
+                                      background: C.redBg,
+                                      color: C.red,
+                                    }}
+                                  >
+                                    <Trash2 size={14} />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))
+                        )}
                       </tbody>
                     </table>
                   </div>
                 </div>
+
+                <p
+                  style={{
+                    margin: '12px 0 0',
+                    color: C.muted,
+                    fontSize: 10,
+                    lineHeight: 1.6,
+                  }}
+                >
+                  Export CSV creates a spreadsheet-compatible file containing
+                  the currently filtered member records.
+                </p>
               </div>
-            );
-          })()}
+            )}
 
+            {/* MEETINGS */}
+            {activeTab === 'meetings' && (
+              <MeetingAdminSection
+                meetings={meetings}
+                members={members}
+                onRefresh={() => window.location.reload()}
+              />
+            )}
 
+            {/* CERTIFICATES */}
+            {activeTab === 'certificates' && (
+              <div>
+                <SectionHeading
+                  eyebrow="Recognition and records"
+                  title="Issue a certificate"
+                  description="Associate a certificate with a registered member and provide its file URL."
+                />
 
-          {/* ── CERTIFICATES ───────────────── */}
-          {activeTab === 'certificates' && (
-            <div>
-              <h2 style={{ fontSize: 18, fontWeight: 700, color: '#fff', marginBottom: 20 }}>Upload Certificate</h2>
-              <form action={(f) => handleAction(createCertificate, f)} style={{ display: 'flex', flexDirection: 'column', gap: 14, maxWidth: 480 }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: 12, color: '#94a3b8', marginBottom: 6 }}>Select Member</label>
-                  <select name="member_id" required className={inputCls} style={{ ...inputStyle, appearance: 'none' }}>
-                    <option value="">-- Select Member --</option>
-                    {members.map((m: any) => <option key={m._id} value={m._id}>{m.name} ({m.xts_id})</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: 12, color: '#94a3b8', marginBottom: 6 }}>Certificate Title</label>
-                  <input name="title" required className={inputCls} style={inputStyle} />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: 12, color: '#94a3b8', marginBottom: 6 }}>File URL</label>
-                  <input name="file_url" required placeholder="https://..." className={inputCls} style={inputStyle} />
-                </div>
-                <button type="submit" disabled={loading} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '11px', borderRadius: 10, border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg, #d97706, #b45309)', color: '#fff', fontWeight: 600, fontSize: 14 }}>
-                  {loading ? <Loader2 style={{ width: 16, height: 16 }} className="animate-spin" /> : <><Plus style={{ width: 15, height: 15 }} /> Upload Certificate</>}
-                </button>
-              </form>
-            </div>
-          )}
+                <form
+                  action={(formData) =>
+                    handleAction(createCertificate, formData)
+                  }
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 17,
+                    maxWidth: 530,
+                  }}
+                >
+                  <Field label="Select Member">
+                    <select
+                      name="member_id"
+                      required
+                      defaultValue=""
+                      style={inputStyle}
+                    >
+                      <option value="" disabled>
+                        Choose a registered member
+                      </option>
+                      {members.map((member: any) => (
+                        <option key={member._id} value={member._id}>
+                          {member.name} ({member.xts_id})
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
 
-          {/* ── EVENTS ─────────────────────── */}
-          {activeTab === 'events' && (
-            <div>
-              <h2 style={{ fontSize: 18, fontWeight: 700, color: '#fff', marginBottom: 20 }}>Create Event</h2>
-              <form action={(f) => handleAction(createEvent, f)} style={{ display: 'flex', flexDirection: 'column', gap: 14, maxWidth: 480 }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: 12, color: '#94a3b8', marginBottom: 6 }}>Event Title</label>
-                  <input name="title" required className={inputCls} style={inputStyle} />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: 12, color: '#94a3b8', marginBottom: 6 }}>Date</label>
-                  <input name="date" type="date" required className={inputCls} style={inputStyle} />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: 12, color: '#94a3b8', marginBottom: 6 }}>Description</label>
-                  <textarea name="description" required rows={3} className={inputCls} style={{ ...inputStyle, resize: 'vertical' }} />
-                </div>
-                <button type="submit" disabled={loading} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '11px', borderRadius: 10, border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg, #7c3aed, #6d28d9)', color: '#fff', fontWeight: 600, fontSize: 14 }}>
-                  {loading ? <Loader2 style={{ width: 16, height: 16 }} className="animate-spin" /> : <><Plus style={{ width: 15, height: 15 }} /> Add Event</>}
-                </button>
-              </form>
-            </div>
-          )}
+                  <Field label="Certificate Title">
+                    <input
+                      name="title"
+                      required
+                      placeholder="e.g. Certificate of Participation"
+                      style={inputStyle}
+                    />
+                  </Field>
 
-          {/* ── PROJECTS ───────────────────── */}
-          {activeTab === 'projects' && (
-            <div>
-              <h2 style={{ fontSize: 18, fontWeight: 700, color: '#fff', marginBottom: 20 }}>Add Project</h2>
-              <form action={(f) => handleAction(createProject, f)} style={{ display: 'flex', flexDirection: 'column', gap: 14, maxWidth: 480 }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: 12, color: '#94a3b8', marginBottom: 6 }}>Project Title</label>
-                  <input name="title" required className={inputCls} style={inputStyle} />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: 12, color: '#94a3b8', marginBottom: 6 }}>Project Link</label>
-                  <input name="link" required placeholder="https://github.com/..." className={inputCls} style={inputStyle} />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: 12, color: '#94a3b8', marginBottom: 6 }}>Description</label>
-                  <textarea name="description" required rows={3} className={inputCls} style={{ ...inputStyle, resize: 'vertical' }} />
-                </div>
-                <button type="submit" disabled={loading} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '11px', borderRadius: 10, border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg, #059669, #047857)', color: '#fff', fontWeight: 600, fontSize: 14 }}>
-                  {loading ? <Loader2 style={{ width: 16, height: 16 }} className="animate-spin" /> : <><Plus style={{ width: 15, height: 15 }} /> Add Project</>}
-                </button>
-              </form>
-            </div>
-          )}
+                  <Field label="Certificate File URL">
+                    <input
+                      name="file_url"
+                      type="url"
+                      required
+                      placeholder="https://..."
+                      style={inputStyle}
+                    />
+                  </Field>
 
-          {/* ── RESIGNATIONS ───────────────── */}
-          {activeTab === 'resignations' && (
-            <div>
-              <h2 style={{ fontSize: 18, fontWeight: 700, color: '#fff', marginBottom: 20 }}>
-                Resignation Requests
-                {pendingCount > 0 && <span style={{ marginLeft: 10, fontSize: 12, background: '#f87171', color: '#fff', borderRadius: 8, padding: '2px 10px' }}>{pendingCount} Pending</span>}
-              </h2>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    style={primaryButtonStyle}
+                  >
+                    {loading ? (
+                      <Loader2 size={16} className="animate-spin" />
+                    ) : (
+                      <Plus size={16} />
+                    )}
+                    {loading ? 'Uploading...' : 'Upload Certificate'}
+                  </button>
+                </form>
+              </div>
+            )}
 
-              {(!resignations || resignations.length === 0) ? (
-                <div style={{ textAlign: 'center', padding: '48px 0' }}>
-                  <LogOut style={{ width: 40, height: 40, color: '#334155', margin: '0 auto 12px' }} />
-                  <p style={{ color: '#64748b' }}>No resignation requests yet.</p>
-                </div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                  {resignations.map((r: any) => (
-                    <div key={r._id} style={{ background: 'rgba(255,255,255,0.04)', border: `1px solid ${r.status === 'pending' ? 'rgba(248,113,113,0.2)' : 'rgba(52,211,153,0.15)'}`, borderRadius: 14, padding: 20 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                        <div>
-                          <p style={{ color: '#fff', fontWeight: 600, margin: '0 0 3px' }}>{r.member_name}</p>
-                          <p style={{ color: '#64748b', fontSize: 12, margin: 0 }}>{r.member_xts_id} &bull; {new Date(r.submittedAt).toLocaleDateString()}</p>
-                        </div>
-                        {r.status === 'pending'
-                          ? <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 600, background: 'rgba(251,191,36,0.1)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.25)', borderRadius: 20, padding: '3px 10px' }}><Clock style={{ width: 11, height: 11 }} /> Pending</span>
-                          : <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 600, background: 'rgba(52,211,153,0.1)', color: '#34d399', border: '1px solid rgba(52,211,153,0.25)', borderRadius: 20, padding: '3px 10px' }}><CheckCircle2 style={{ width: 11, height: 11 }} /> Approved</span>
-                        }
-                      </div>
+            {/* EVENTS */}
+            {activeTab === 'events' && (
+              <div>
+                <SectionHeading
+                  eyebrow="Society activities"
+                  title="Events Management"
+                  description="Publish, update, and manage official XTS events visible to members and on the public website."
+                />
 
-                      <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 10, padding: '12px 16px', marginBottom: r.status === 'pending' ? 14 : 0 }}>
-                        <p style={{ color: '#94a3b8', fontSize: 13, margin: 0, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{r.letter}</p>
-                      </div>
+                <div
+                  style={{
+                    background: '#F9FAFC',
+                    border: `1px solid ${C.border}`,
+                    borderRadius: 14,
+                    padding: 22,
+                    marginBottom: 32,
+                  }}
+                >
+                  <h3
+                    style={{
+                      fontSize: 16,
+                      fontWeight: 750,
+                      color: C.ink,
+                      margin: '0 0 16px',
+                    }}
+                  >
+                    Create New Event
+                  </h3>
 
-                      {r.status === 'pending' && (
-                        <div style={{ display: 'flex', gap: 10 }}>
-                          <button
-                            onClick={() => handleApprove(r._id)}
-                            disabled={resLoading === r._id}
-                            style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '9px', borderRadius: 9, border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg, #ef4444, #dc2626)', color: '#fff', fontWeight: 600, fontSize: 13, opacity: resLoading === r._id ? 0.6 : 1 }}
-                          >
-                            {resLoading === r._id ? <Loader2 style={{ width: 14, height: 14 }} className="animate-spin" /> : <CheckCircle2 style={{ width: 14, height: 14 }} />}
-                            Approve & Remove Member
-                          </button>
-                          <button
-                            onClick={() => handleReject(r._id)}
-                            disabled={resLoading === r._id}
-                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '9px 16px', borderRadius: 9, border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer', background: 'rgba(255,255,255,0.05)', color: '#94a3b8', fontWeight: 600, fontSize: 13 }}
-                          >
-                            <XCircle style={{ width: 14, height: 14 }} />
-                            Reject
-                          </button>
-                        </div>
-                      )}
+                  <form
+                    action={(formData) => handleAction(createEvent, formData)}
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 16,
+                      maxWidth: 620,
+                    }}
+                  >
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 14 }}>
+                      <Field label="Event Title">
+                        <input
+                          name="title"
+                          required
+                          placeholder="e.g. BUILDX: IoT Edition"
+                          style={inputStyle}
+                        />
+                      </Field>
+
+                      <Field label="Event Date">
+                        <input
+                          name="date"
+                          type="date"
+                          required
+                          style={inputStyle}
+                        />
+                      </Field>
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
 
-        </div>
+                    <Field label="Description">
+                      <textarea
+                        name="description"
+                        required
+                        rows={3}
+                        placeholder="Provide event details, schedule, or prerequisites..."
+                        style={{ ...inputStyle, resize: 'vertical' }}
+                      />
+                    </Field>
+
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      style={{ ...primaryButtonStyle, alignSelf: 'flex-start' }}
+                    >
+                      {loading ? (
+                        <Loader2 size={16} className="animate-spin" />
+                      ) : (
+                        <Plus size={16} />
+                      )}
+                      {loading ? 'Publishing event...' : 'Publish Event'}
+                    </button>
+                  </form>
+                </div>
+
+                {/* Existing Events List */}
+                <div>
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      marginBottom: 16,
+                    }}
+                  >
+                    <h3
+                      style={{
+                        fontSize: 16,
+                        fontWeight: 750,
+                        color: C.ink,
+                        margin: 0,
+                      }}
+                    >
+                      Published Events ({events.length})
+                    </h3>
+                    <span style={{ fontSize: 12, color: C.muted }}>
+                      Live on Landing Page &amp; Member Dashboard
+                    </span>
+                  </div>
+
+                  {events.length === 0 ? (
+                    <div
+                      style={{
+                        padding: 36,
+                        textAlign: 'center',
+                        background: '#FAFAFD',
+                        borderRadius: 14,
+                        border: `1px dashed ${C.border}`,
+                        color: C.muted,
+                      }}
+                    >
+                      <Calendar size={32} style={{ margin: '0 auto 10px', opacity: 0.5 }} />
+                      <p style={{ margin: 0, fontWeight: 600 }}>No events published yet.</p>
+                      <p style={{ margin: '4px 0 0', fontSize: 12 }}>Create an event above to showcase it to members and visitors.</p>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                      {events.map((ev: any) => {
+                        const eventDate = new Date(ev.date);
+                        const isUpcoming = eventDate.getTime() >= new Date().setHours(0, 0, 0, 0);
+
+                        return (
+                          <div
+                            key={ev._id}
+                            style={{
+                              border: `1px solid ${C.border}`,
+                              borderRadius: 14,
+                              padding: '18px 20px',
+                              background: C.white,
+                              boxShadow: '0 2px 8px rgba(15,18,38,0.02)',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: 12,
+                            }}
+                          >
+                            <div
+                              style={{
+                                display: 'flex',
+                                alignItems: 'flex-start',
+                                justifyContent: 'space-between',
+                                gap: 12,
+                                flexWrap: 'wrap',
+                              }}
+                            >
+                              <div style={{ minWidth: 0, flex: 1 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                                  <span
+                                    style={{
+                                      fontSize: 11,
+                                      fontWeight: 700,
+                                      padding: '3px 8px',
+                                      borderRadius: 6,
+                                      background: isUpcoming ? '#EAF7F0' : '#F1F3F9',
+                                      color: isUpcoming ? '#16845B' : '#777D98',
+                                    }}
+                                  >
+                                    {isUpcoming ? 'Upcoming' : 'Concluded'}
+                                  </span>
+
+                                  <span
+                                    style={{
+                                      fontSize: 12,
+                                      fontWeight: 600,
+                                      color: C.blue,
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: 4,
+                                    }}
+                                  >
+                                    <Calendar size={13} />
+                                    {eventDate.toLocaleDateString(undefined, {
+                                      weekday: 'short',
+                                      year: 'numeric',
+                                      month: 'short',
+                                      day: 'numeric',
+                                    })}
+                                  </span>
+                                </div>
+
+                                <h4
+                                  style={{
+                                    fontSize: 17,
+                                    fontWeight: 800,
+                                    color: C.ink,
+                                    margin: 0,
+                                    letterSpacing: '-0.02em',
+                                  }}
+                                >
+                                  {ev.title}
+                                </h4>
+                              </div>
+
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <button
+                                  type="button"
+                                  onClick={() => setEditingEvent(ev)}
+                                  style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: 6,
+                                    padding: '7px 12px',
+                                    borderRadius: 8,
+                                    border: `1px solid ${C.border}`,
+                                    background: '#F8F9FD',
+                                    color: C.ink,
+                                    fontSize: 12,
+                                    fontWeight: 650,
+                                    cursor: 'pointer',
+                                  }}
+                                >
+                                  <Pencil size={13} />
+                                  Edit
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteEvent(ev._id)}
+                                  disabled={loading}
+                                  style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: 6,
+                                    padding: '7px 12px',
+                                    borderRadius: 8,
+                                    border: '1px solid #FFD8DC',
+                                    background: '#FFF4F5',
+                                    color: '#C43D4B',
+                                    fontSize: 12,
+                                    fontWeight: 650,
+                                    cursor: 'pointer',
+                                  }}
+                                >
+                                  <Trash2 size={13} />
+                                  Delete
+                                </button>
+                              </div>
+                            </div>
+
+                            <p
+                              style={{
+                                color: C.muted,
+                                fontSize: 13,
+                                lineHeight: 1.65,
+                                margin: 0,
+                                whiteSpace: 'pre-line',
+                              }}
+                            >
+                              {ev.description}
+                            </p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* PROJECTS */}
+            {activeTab === 'projects' && (
+              <div>
+                <SectionHeading
+                  eyebrow="Project portfolio"
+                  title="Projects Management"
+                  description="Publish, update, and manage official XTS projects visible on the Landing Page and Member Portal."
+                />
+
+                <div
+                  style={{
+                    background: '#F9FAFC',
+                    border: `1px solid ${C.border}`,
+                    borderRadius: 14,
+                    padding: 22,
+                    marginBottom: 32,
+                  }}
+                >
+                  <h3
+                    style={{
+                      fontSize: 16,
+                      fontWeight: 750,
+                      color: C.ink,
+                      margin: '0 0 16px',
+                    }}
+                  >
+                    Add New Project
+                  </h3>
+
+                  <form
+                    action={(formData) => handleAction(createProject, formData)}
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 16,
+                      maxWidth: 620,
+                    }}
+                  >
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 14 }}>
+                      <Field label="Project Title">
+                        <input
+                          name="title"
+                          required
+                          placeholder="e.g. BuildMate"
+                          style={inputStyle}
+                        />
+                      </Field>
+
+                      <Field label="Project Link / Repository">
+                        <input
+                          name="link"
+                          type="url"
+                          required
+                          placeholder="https://github.com/..."
+                          style={inputStyle}
+                        />
+                      </Field>
+                    </div>
+
+                    <Field label="Project Description">
+                      <textarea
+                        name="description"
+                        required
+                        rows={3}
+                        placeholder="Detail the project goals, tech stack, and contribution opportunities..."
+                        style={{ ...inputStyle, resize: 'vertical' }}
+                      />
+                    </Field>
+
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      style={{ ...primaryButtonStyle, alignSelf: 'flex-start' }}
+                    >
+                      {loading ? (
+                        <Loader2 size={16} className="animate-spin" />
+                      ) : (
+                        <Plus size={16} />
+                      )}
+                      {loading ? 'Adding project...' : 'Add Project'}
+                    </button>
+                  </form>
+                </div>
+
+                {/* Existing Projects List */}
+                <div>
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      marginBottom: 16,
+                    }}
+                  >
+                    <h3
+                      style={{
+                        fontSize: 16,
+                        fontWeight: 750,
+                        color: C.ink,
+                        margin: 0,
+                      }}
+                    >
+                      Published Projects ({projects.length})
+                    </h3>
+                    <span style={{ fontSize: 12, color: C.muted }}>
+                      Live on Landing Page &amp; Member Dashboard
+                    </span>
+                  </div>
+
+                  {projects.length === 0 ? (
+                    <div
+                      style={{
+                        padding: 36,
+                        textAlign: 'center',
+                        background: '#FAFAFD',
+                        borderRadius: 14,
+                        border: `1px dashed ${C.border}`,
+                        color: C.muted,
+                      }}
+                    >
+                      <FolderGit2 size={32} style={{ margin: '0 auto 10px', opacity: 0.5 }} />
+                      <p style={{ margin: 0, fontWeight: 600 }}>No projects published yet.</p>
+                      <p style={{ margin: '4px 0 0', fontSize: 12 }}>Add a project above to showcase work by XTS builders.</p>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 14 }}>
+                      {projects.map((proj: any) => (
+                        <div
+                          key={proj._id}
+                          style={{
+                            border: `1px solid ${C.border}`,
+                            borderRadius: 14,
+                            padding: '18px 20px',
+                            background: C.white,
+                            boxShadow: '0 2px 8px rgba(15,18,38,0.02)',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 12,
+                          }}
+                        >
+                          <div
+                            style={{
+                              display: 'flex',
+                              alignItems: 'flex-start',
+                              justifyContent: 'space-between',
+                              gap: 12,
+                            }}
+                          >
+                            <div style={{ minWidth: 0, flex: 1 }}>
+                              <h4
+                                style={{
+                                  fontSize: 17,
+                                  fontWeight: 800,
+                                  color: C.ink,
+                                  margin: '0 0 4px',
+                                  letterSpacing: '-0.02em',
+                                }}
+                              >
+                                {proj.title}
+                              </h4>
+
+                              {proj.link && (
+                                <a
+                                  href={proj.link}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: 4,
+                                    fontSize: 12,
+                                    color: C.blue,
+                                    fontWeight: 600,
+                                    textDecoration: 'none',
+                                    maxWidth: '100%',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap',
+                                  }}
+                                >
+                                  {proj.link.replace(/^https?:\/\//, '')}
+                                  <ExternalLink size={12} />
+                                </a>
+                              )}
+                            </div>
+
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                              <button
+                                type="button"
+                                onClick={() => setEditingProject(proj)}
+                                title="Edit project"
+                                style={{
+                                  padding: 7,
+                                  borderRadius: 8,
+                                  border: `1px solid ${C.border}`,
+                                  background: '#F8F9FD',
+                                  color: C.ink,
+                                  cursor: 'pointer',
+                                }}
+                              >
+                                <Pencil size={13} />
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteProject(proj._id)}
+                                title="Delete project"
+                                disabled={loading}
+                                style={{
+                                  padding: 7,
+                                  borderRadius: 8,
+                                  border: '1px solid #FFD8DC',
+                                  background: '#FFF4F5',
+                                  color: '#C43D4B',
+                                  cursor: 'pointer',
+                                }}
+                              >
+                                <Trash2 size={13} />
+                              </button>
+                            </div>
+                          </div>
+
+                          <p
+                            style={{
+                              color: C.muted,
+                              fontSize: 13,
+                              lineHeight: 1.65,
+                              margin: 0,
+                              whiteSpace: 'pre-line',
+                            }}
+                          >
+                            {proj.description}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* RESIGNATIONS */}
+            {activeTab === 'resignations' && (
+              <div>
+                <SectionHeading
+                  eyebrow="Member requests"
+                  title="Resignation requests"
+                  description="Review resignation letters and take action on pending requests."
+                />
+
+                {pendingCount > 0 && (
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 10,
+                      padding: 13,
+                      marginBottom: 18,
+                      borderRadius: 10,
+                      background: C.amberBg,
+                      border: '1px solid #F0DCA9',
+                      color: C.amber,
+                    }}
+                  >
+                    <Clock size={17} />
+                    <span style={{ fontSize: 12, fontWeight: 750 }}>
+                      {pendingCount} request{pendingCount === 1 ? '' : 's'}{' '}
+                      awaiting review
+                    </span>
+                  </div>
+                )}
+
+                {resignations.length === 0 ? (
+                  <div
+                    style={{
+                      textAlign: 'center',
+                      padding: '50px 20px',
+                      border: `1px dashed ${C.border}`,
+                      borderRadius: 14,
+                      background: '#FAFBFF',
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 52,
+                        height: 52,
+                        display: 'grid',
+                        placeItems: 'center',
+                        borderRadius: 15,
+                        background: C.blueLight,
+                        color: C.blue,
+                        margin: '0 auto 13px',
+                      }}
+                    >
+                      <LogOut size={23} />
+                    </div>
+
+                    <p
+                      style={{
+                        color: C.ink,
+                        fontWeight: 800,
+                        fontSize: 14,
+                        margin: 0,
+                      }}
+                    >
+                      No resignation requests
+                    </p>
+
+                    <p
+                      style={{
+                        color: C.muted,
+                        fontSize: 12,
+                        margin: '7px 0 0',
+                      }}
+                    >
+                      There are no resignation records to review.
+                    </p>
+                  </div>
+                ) : (
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 13,
+                    }}
+                  >
+                    {resignations.map((resignation: any) => {
+                      const pending = resignation.status === 'pending';
+                      const busy = resLoading === resignation._id;
+
+                      return (
+                        <article
+                          key={resignation._id}
+                          style={{
+                            border: `1px solid ${
+                              pending ? '#F0DCA9' : C.border
+                            }`,
+                            borderRadius: 14,
+                            padding: 18,
+                            background: pending ? '#FFFEFA' : C.white,
+                          }}
+                        >
+                          <div
+                            style={{
+                              display: 'flex',
+                              alignItems: 'flex-start',
+                              justifyContent: 'space-between',
+                              gap: 12,
+                              flexWrap: 'wrap',
+                              marginBottom: 14,
+                            }}
+                          >
+                            <div>
+                              <p
+                                style={{
+                                  color: C.ink,
+                                  fontWeight: 800,
+                                  fontSize: 14,
+                                  margin: '0 0 5px',
+                                }}
+                              >
+                                {resignation.member_name}
+                              </p>
+
+                              <p
+                                style={{
+                                  color: C.muted,
+                                  fontSize: 11,
+                                  margin: 0,
+                                }}
+                              >
+                                {resignation.member_xts_id}
+                                {' · '}
+                                {resignation.submittedAt
+                                  ? new Date(
+                                      resignation.submittedAt
+                                    ).toLocaleDateString()
+                                  : 'Date unavailable'}
+                              </p>
+                            </div>
+
+                            <span
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 6,
+                                padding: '6px 9px',
+                                borderRadius: 7,
+                                fontSize: 10,
+                                fontWeight: 800,
+                                color: pending ? C.amber : C.green,
+                                background: pending ? C.amberBg : C.greenBg,
+                                border: `1px solid ${
+                                  pending ? '#F0DCA9' : '#C9EAD9'
+                                }`,
+                              }}
+                            >
+                              {pending ? (
+                                <Clock size={12} />
+                              ) : (
+                                <CheckCircle2 size={12} />
+                              )}
+                              {pending ? 'PENDING REVIEW' : 'PROCESSED'}
+                            </span>
+                          </div>
+
+                          <div
+                            style={{
+                              background: '#F7F8FC',
+                              border: `1px solid ${C.border}`,
+                              borderRadius: 10,
+                              padding: '13px 14px',
+                              marginBottom: pending ? 14 : 0,
+                            }}
+                          >
+                            <p
+                              style={{
+                                color: C.muted,
+                                fontSize: 12,
+                                margin: 0,
+                                lineHeight: 1.8,
+                                whiteSpace: 'pre-wrap',
+                              }}
+                            >
+                              {resignation.letter ||
+                                'No resignation letter was provided.'}
+                            </p>
+                          </div>
+
+                          {pending && (
+                            <div
+                              style={{
+                                display: 'flex',
+                                gap: 9,
+                                flexWrap: 'wrap',
+                              }}
+                            >
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleApprove(resignation._id)
+                                }
+                                disabled={busy}
+                                style={{
+                                  ...primaryButtonStyle,
+                                  flex: '1 1 200px',
+                                  background: C.red,
+                                }}
+                              >
+                                {busy ? (
+                                  <Loader2
+                                    size={15}
+                                    className="animate-spin"
+                                  />
+                                ) : (
+                                  <CheckCircle2 size={15} />
+                                )}
+                                Approve & Remove Member
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleReject(resignation._id)
+                                }
+                                disabled={busy}
+                                style={{
+                                  ...secondaryButtonStyle,
+                                  padding: '10px 15px',
+                                }}
+                              >
+                                <XCircle size={15} />
+                                Reject Request
+                              </button>
+                            </div>
+                          )}
+                        </article>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+          </section>
+        </main>
       </div>
 
-      {/* Edit Member Modal */}
+      {/* EDIT MEMBER MODAL */}
       {editingMember && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, zIndex: 100 }}>
-          <div style={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 18, padding: 28, width: '100%', maxWidth: 500, maxHeight: '90vh', overflowY: 'auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-              <h2 style={{ fontSize: 18, fontWeight: 700, color: '#fff', margin: 0 }}>Edit Member</h2>
-              <button onClick={() => { setEditingMember(null); setEditPreview(null); }} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#64748b' }}><X style={{ width: 20, height: 20 }} /></button>
-            </div>
-            <form
-              action={async (f) => {
-                setLoading(true);
-                const res = await updateMember(f);
-                if (res.error) setMessage(`Error: ${res.error}`);
-                else { setEditingMember(null); window.location.reload(); }
-                setLoading(false);
+        <div
+          className="xts-modal-overlay"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) {
+              setEditingMember(null);
+              setEditPreview(null);
+            }
+          }}
+        >
+          <div
+            style={{
+              background: C.white,
+              border: `1px solid ${C.border}`,
+              borderRadius: 18,
+              padding: 25,
+              width: '100%',
+              maxWidth: 560,
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              boxShadow: '0 25px 80px rgba(15,18,38,0.2)',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 12,
+                paddingBottom: 18,
+                borderBottom: `1px solid ${C.border}`,
+                marginBottom: 20,
               }}
-              style={{ display: 'flex', flexDirection: 'column', gap: 14 }}
             >
-              <input type="hidden" name="member_id" value={editingMember._id} />
-              <div style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
-                <label style={{ width: 90, height: 90, borderRadius: 12, border: '2px dashed rgba(255,255,255,0.2)', background: 'rgba(255,255,255,0.02)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', overflow: 'hidden', flexShrink: 0 }}>
-                  <input type="file" name="profile_image" accept="image/*" style={{ display: 'none' }} onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      setEditPreview(URL.createObjectURL(file));
+              <div>
+                <p
+                  style={{
+                    color: C.blue,
+                    fontSize: 10,
+                    fontWeight: 800,
+                    letterSpacing: '0.12em',
+                    margin: '0 0 5px',
+                  }}
+                >
+                  MEMBER MANAGEMENT
+                </p>
+                <h2
+                  style={{
+                    fontSize: 20,
+                    fontWeight: 850,
+                    color: C.ink,
+                    margin: 0,
+                    letterSpacing: '-0.04em',
+                  }}
+                >
+                  Edit Member
+                </h2>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setEditingMember(null);
+                  setEditPreview(null);
+                }}
+                aria-label="Close edit member dialog"
+                style={{
+                  width: 35,
+                  height: 35,
+                  display: 'grid',
+                  placeItems: 'center',
+                  background: '#F5F6FB',
+                  border: `1px solid ${C.border}`,
+                  borderRadius: 9,
+                  color: C.muted,
+                  cursor: 'pointer',
+                }}
+              >
+                <X size={17} />
+              </button>
+            </div>
+
+            <form
+              action={async (formData) => {
+                setLoading(true);
+                setMessage('');
+
+                try {
+                  const res = await updateMember(formData);
+
+                  if (res?.error) {
+                    setMessage(`Error: ${res.error}`);
+                  } else {
+                    setEditingMember(null);
+                    setEditPreview(null);
+                    window.location.reload();
+                  }
+                } catch {
+                  setMessage('Error: Unable to update member.');
+                } finally {
+                  setLoading(false);
+                }
+              }}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 16,
+              }}
+            >
+              <input
+                type="hidden"
+                name="member_id"
+                value={editingMember._id}
+              />
+
+              <div
+                className="xts-profile-row"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 16,
+                }}
+              >
+                <label
+                  style={{
+                    width: 90,
+                    height: 90,
+                    borderRadius: 13,
+                    border: `1px dashed #BCC4E6`,
+                    background: '#F8F9FF',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    overflow: 'hidden',
+                    flexShrink: 0,
+                  }}
+                >
+                  <input
+                    type="file"
+                    name="profile_image"
+                    accept="image/*"
+                    style={{ display: 'none' }}
+                    onChange={(event) =>
+                      handleImageChange(event, setEditPreview)
                     }
-                  }} />
-                  {(editPreview || editingMember.profile_image) ? <img src={editPreview || editingMember.profile_image} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ textAlign: 'center', color: '#94a3b8' }}><Pencil style={{ margin: '0 auto', width: 14, height: 14 }} /><span style={{ fontSize: 10, display: 'block', marginTop: 2 }}>Photo</span></div>}
+                  />
+
+                  {editPreview || editingMember.profile_image ? (
+                    <img
+                      src={editPreview || editingMember.profile_image}
+                      alt="Member photo preview"
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                      }}
+                    />
+                  ) : (
+                    <div style={{ textAlign: 'center', color: C.muted }}>
+                      <Pencil
+                        size={19}
+                        style={{ margin: '0 auto 5px' }}
+                      />
+                      <span style={{ display: 'block', fontSize: 10 }}>
+                        Change Photo
+                      </span>
+                    </div>
+                  )}
                 </label>
-                
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 14 }}>
-                  <div>
-                    <label style={{ display: 'block', fontSize: 12, color: '#94a3b8', marginBottom: 5 }}>Full Name</label>
-                    <input name="name" defaultValue={editingMember.name} required className={inputCls} style={inputStyle} />
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', fontSize: 12, color: '#94a3b8', marginBottom: 5 }}>Email</label>
-                    <input name="email" type="email" defaultValue={editingMember.email} required className={inputCls} style={inputStyle} />
-                  </div>
+
+                <div
+                  style={{
+                    flex: 1,
+                    minWidth: 0,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 13,
+                  }}
+                >
+                  <Field label="Full Name">
+                    <input
+                      name="name"
+                      defaultValue={editingMember.name || ''}
+                      required
+                      style={inputStyle}
+                    />
+                  </Field>
+
+                  <Field label="Email Address">
+                    <input
+                      name="email"
+                      type="email"
+                      defaultValue={editingMember.email || ''}
+                      required
+                      style={inputStyle}
+                    />
+                  </Field>
                 </div>
               </div>
 
-              {[
-                { name: 'xts_id', label: 'XTS ID', val: editingMember.xts_id, req: true },
-                { name: 'phone', label: 'Phone', val: editingMember.phone },
-                { name: 'course', label: 'Course', val: editingMember.course },
-                { name: 'team', label: 'Team', val: editingMember.team },
-                { name: 'semester', label: 'Semester', val: editingMember.semester },
-                { name: 'id_card_url', label: 'ID Card Image (Upload)', type: 'file' },
-              ].map((f: { name: string; label: string; req?: boolean; placeholder?: string; type?: string; val?: any }) => (
-                <div key={f.name}>
-                  <label style={{ display: 'block', fontSize: 12, color: '#94a3b8', marginBottom: 5 }}>
-                    {f.name === 'id_card_url' && <CreditCard style={{ width: 12, height: 12, display: 'inline', marginRight: 4 }} />}
-                    {f.label}
-                  </label>
-                  <input name={f.name} type={f.type || 'text'} {...(f.type !== 'file' ? { defaultValue: f.val || '' } : {})} required={!!f.req} placeholder={f.placeholder} className={inputCls} style={inputStyle} accept={f.type === 'file' ? 'image/*' : undefined} onChange={(e) => {
-                    if (f.type === 'file' && e.target.files?.[0]) {
-                    }
-                  }} />
+              <div className="xts-form-grid">
+                {[
+                  {
+                    name: 'xts_id',
+                    label: 'XTS ID',
+                    value: editingMember.xts_id,
+                    required: true,
+                  },
+                  {
+                    name: 'phone',
+                    label: 'Phone Number',
+                    value: editingMember.phone,
+                  },
+                  {
+                    name: 'course',
+                    label: 'Course',
+                    value: editingMember.course,
+                  },
+                  {
+                    name: 'team',
+                    label: 'Team',
+                    value: editingMember.team,
+                  },
+                  {
+                    name: 'semester',
+                    label: 'Semester',
+                    value: editingMember.semester,
+                  },
+                ].map((field) => (
+                  <Field key={field.name} label={field.label}>
+                    <input
+                      name={field.name}
+                      defaultValue={field.value || ''}
+                      required={field.required}
+                      style={inputStyle}
+                    />
+                  </Field>
+                ))}
+              </div>
+
+              <Field label="ID Card Image (Upload)">
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 9,
+                    padding: 12,
+                    border: `1px solid ${C.border}`,
+                    background: '#F8F9FC',
+                    borderRadius: 10,
+                  }}
+                >
+                  <CreditCard size={17} color={C.blue} />
+                  <input
+                    name="id_card_url"
+                    type="file"
+                    accept="image/*"
+                    style={{
+                      ...inputStyle,
+                      padding: 7,
+                      border: 'none',
+                      background: 'transparent',
+                    }}
+                  />
                 </div>
-              ))}
-              <button type="submit" disabled={loading} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '11px', borderRadius: 10, border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg, #3b82f6, #6366f1)', color: '#fff', fontWeight: 600, fontSize: 14, marginTop: 4 }}>
-                {loading ? <Loader2 style={{ width: 16, height: 16 }} className="animate-spin" /> : 'Save Changes'}
-              </button>
+              </Field>
+
+              <div
+                style={{
+                  display: 'flex',
+                  gap: 9,
+                  justifyContent: 'flex-end',
+                  marginTop: 4,
+                  flexWrap: 'wrap',
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingMember(null);
+                    setEditPreview(null);
+                  }}
+                  style={secondaryButtonStyle}
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  style={primaryButtonStyle}
+                >
+                  {loading ? (
+                    <Loader2 size={15} className="animate-spin" />
+                  ) : (
+                    <CheckCircle2 size={15} />
+                  )}
+                  {loading ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
             </form>
           </div>
         </div>
       )}
-    
-      {/* QR Code Modal */}
-      {qrMember && (() => {
-        const qrMemberObj = (members as any[]).find((m: any) => m._id === qrMember);
-        const qrUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/member/${qrMember}`;
-        const downloadQR = () => {
-          const canvas = document.getElementById('qr-download-canvas') as HTMLCanvasElement | null;
-          if (!canvas) return;
-          const link = document.createElement('a');
-          link.download = `${qrMemberObj?.name?.replace(/\s+/g, '_') || 'member'}_QR.png`;
-          link.href = canvas.toDataURL('image/png');
-          link.click();
-        };
-        return (
-          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, zIndex: 100 }}>
-            <div style={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 18, padding: 28, width: '100%', maxWidth: 350, textAlign: 'center' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-                <div style={{ textAlign: 'left' }}>
-                  <h2 style={{ fontSize: 18, fontWeight: 700, color: '#fff', margin: 0 }}>Member QR Code</h2>
-                  {qrMemberObj && <p style={{ color: '#64748b', fontSize: 12, margin: '2px 0 0' }}>{qrMemberObj.name} · {qrMemberObj.xts_id}</p>}
-                </div>
-                <button onClick={() => setQrMember(null)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#64748b' }}><X style={{ width: 20, height: 20 }} /></button>
+
+      {/* EDIT EVENT MODAL */}
+      {editingEvent && (
+        <div
+          className="xts-modal-overlay"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) {
+              setEditingEvent(null);
+            }
+          }}
+        >
+          <div
+            style={{
+              background: C.white,
+              border: `1px solid ${C.border}`,
+              borderRadius: 18,
+              padding: 25,
+              width: '100%',
+              maxWidth: 540,
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              boxShadow: '0 25px 80px rgba(15,18,38,0.2)',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 12,
+                paddingBottom: 16,
+                borderBottom: `1px solid ${C.border}`,
+                marginBottom: 20,
+              }}
+            >
+              <div>
+                <p
+                  style={{
+                    color: C.blue,
+                    fontSize: 10,
+                    fontWeight: 850,
+                    letterSpacing: '0.12em',
+                    margin: '0 0 4px',
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  Event Configuration
+                </p>
+                <h2
+                  style={{
+                    fontSize: 20,
+                    fontWeight: 850,
+                    color: C.ink,
+                    margin: 0,
+                    letterSpacing: '-0.03em',
+                  }}
+                >
+                  Edit Event
+                </h2>
               </div>
 
-              {/* Visible SVG QR */}
-              <div style={{ background: '#fff', padding: 20, borderRadius: 12, display: 'inline-block', marginBottom: 16 }}>
-                <QRCodeSVG value={qrUrl} size={200} />
-              </div>
-
-              {/* Hidden canvas QR for download */}
-              <div style={{ display: 'none' }}>
-                <QRCodeCanvas id="qr-download-canvas" value={qrUrl} size={400} />
-              </div>
-
-              <p style={{ color: '#94a3b8', fontSize: 13, margin: '0 0 16px' }}>
-                Scan to view profile · XTS ID required to unlock
-              </p>
-
-              {/* Download button */}
               <button
-                onClick={downloadQR}
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: '10px', borderRadius: 10, border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg, #3b82f6, #6366f1)', color: '#fff', fontWeight: 600, fontSize: 14 }}
+                type="button"
+                onClick={() => setEditingEvent(null)}
+                aria-label="Close modal"
+                style={{
+                  width: 32,
+                  height: 32,
+                  display: 'grid',
+                  placeItems: 'center',
+                  background: '#F5F6FB',
+                  border: `1px solid ${C.border}`,
+                  borderRadius: 9,
+                  cursor: 'pointer',
+                  color: C.muted,
+                }}
               >
-                <Download style={{ width: 15, height: 15 }} /> Download QR Code
+                <X size={16} />
               </button>
             </div>
+
+            <form
+              action={async (formData) => {
+                setLoading(true);
+                setMessage('');
+                try {
+                  const res = await updateEvent(formData);
+                  if (res?.error) {
+                    setMessage(`Error: ${res.error}`);
+                  } else {
+                    setEditingEvent(null);
+                    window.location.reload();
+                  }
+                } catch {
+                  setMessage('Error: Unable to update event.');
+                } finally {
+                  setLoading(false);
+                }
+              }}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 16,
+              }}
+            >
+              <input
+                type="hidden"
+                name="event_id"
+                value={editingEvent._id}
+              />
+
+              <Field label="Event Title">
+                <input
+                  name="title"
+                  defaultValue={editingEvent.title || ''}
+                  required
+                  style={inputStyle}
+                />
+              </Field>
+
+              <Field label="Event Date">
+                <input
+                  name="date"
+                  type="date"
+                  defaultValue={
+                    editingEvent.date
+                      ? new Date(editingEvent.date).toISOString().split('T')[0]
+                      : ''
+                  }
+                  required
+                  style={inputStyle}
+                />
+              </Field>
+
+              <Field label="Description">
+                <textarea
+                  name="description"
+                  defaultValue={editingEvent.description || ''}
+                  required
+                  rows={4}
+                  style={{ ...inputStyle, resize: 'vertical' }}
+                />
+              </Field>
+
+              <div
+                style={{
+                  display: 'flex',
+                  gap: 9,
+                  justifyContent: 'flex-end',
+                  marginTop: 6,
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={() => setEditingEvent(null)}
+                  style={secondaryButtonStyle}
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  style={primaryButtonStyle}
+                >
+                  {loading ? (
+                    <Loader2 size={15} className="animate-spin" />
+                  ) : (
+                    <CheckCircle2 size={15} />
+                  )}
+                  {loading ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
           </div>
-        );
-      })()}
+        </div>
+      )}
+
+      {/* EDIT PROJECT MODAL */}
+      {editingProject && (
+        <div
+          className="xts-modal-overlay"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) {
+              setEditingProject(null);
+            }
+          }}
+        >
+          <div
+            style={{
+              background: C.white,
+              border: `1px solid ${C.border}`,
+              borderRadius: 18,
+              padding: 25,
+              width: '100%',
+              maxWidth: 540,
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              boxShadow: '0 25px 80px rgba(15,18,38,0.2)',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 12,
+                paddingBottom: 16,
+                borderBottom: `1px solid ${C.border}`,
+                marginBottom: 20,
+              }}
+            >
+              <div>
+                <p
+                  style={{
+                    color: C.blue,
+                    fontSize: 10,
+                    fontWeight: 850,
+                    letterSpacing: '0.12em',
+                    margin: '0 0 4px',
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  Project Portfolio
+                </p>
+                <h2
+                  style={{
+                    fontSize: 20,
+                    fontWeight: 850,
+                    color: C.ink,
+                    margin: 0,
+                    letterSpacing: '-0.03em',
+                  }}
+                >
+                  Edit Project
+                </h2>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setEditingProject(null)}
+                aria-label="Close modal"
+                style={{
+                  width: 32,
+                  height: 32,
+                  display: 'grid',
+                  placeItems: 'center',
+                  background: '#F5F6FB',
+                  border: `1px solid ${C.border}`,
+                  borderRadius: 9,
+                  cursor: 'pointer',
+                  color: C.muted,
+                }}
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <form
+              action={async (formData) => {
+                setLoading(true);
+                setMessage('');
+                try {
+                  const res = await updateProject(formData);
+                  if (res?.error) {
+                    setMessage(`Error: ${res.error}`);
+                  } else {
+                    setEditingProject(null);
+                    window.location.reload();
+                  }
+                } catch {
+                  setMessage('Error: Unable to update project.');
+                } finally {
+                  setLoading(false);
+                }
+              }}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 16,
+              }}
+            >
+              <input
+                type="hidden"
+                name="project_id"
+                value={editingProject._id}
+              />
+
+              <Field label="Project Title">
+                <input
+                  name="title"
+                  defaultValue={editingProject.title || ''}
+                  required
+                  style={inputStyle}
+                />
+              </Field>
+
+              <Field label="Project Link / Repository">
+                <input
+                  name="link"
+                  type="url"
+                  defaultValue={editingProject.link || ''}
+                  required
+                  style={inputStyle}
+                />
+              </Field>
+
+              <Field label="Project Description">
+                <textarea
+                  name="description"
+                  defaultValue={editingProject.description || ''}
+                  required
+                  rows={4}
+                  style={{ ...inputStyle, resize: 'vertical' }}
+                />
+              </Field>
+
+              <div
+                style={{
+                  display: 'flex',
+                  gap: 9,
+                  justifyContent: 'flex-end',
+                  marginTop: 6,
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={() => setEditingProject(null)}
+                  style={secondaryButtonStyle}
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  style={primaryButtonStyle}
+                >
+                  {loading ? (
+                    <Loader2 size={15} className="animate-spin" />
+                  ) : (
+                    <CheckCircle2 size={15} />
+                  )}
+                  {loading ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MEMBER QR CODE MODAL */}
+      {qrMember &&
+        (() => {
+          const qrMemberObj = members.find(
+            (member: any) => member._id === qrMember
+          );
+
+          const qrUrl = `${window.location.origin}/member/${qrMember}`;
+
+          const downloadQR = () => {
+            const canvas = document.getElementById(
+              'qr-download-canvas'
+            ) as HTMLCanvasElement | null;
+
+            if (!canvas) return;
+
+            const link = document.createElement('a');
+            link.download = `${(
+              qrMemberObj?.name || 'member'
+            ).replace(/\s+/g, '_')}_QR.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+          };
+
+          return (
+            <div
+              className="xts-modal-overlay"
+              onClick={(event) => {
+                if (event.target === event.currentTarget) {
+                  setQrMember(null);
+                }
+              }}
+            >
+              <div
+                style={{
+                  background: C.white,
+                  border: `1px solid ${C.border}`,
+                  borderRadius: 19,
+                  padding: 25,
+                  width: '100%',
+                  maxWidth: 370,
+                  textAlign: 'center',
+                  boxShadow: '0 25px 80px rgba(15,18,38,0.2)',
+                }}
+              >
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    justifyContent: 'space-between',
+                    gap: 10,
+                    marginBottom: 21,
+                    textAlign: 'left',
+                  }}
+                >
+                  <div>
+                    <p
+                      style={{
+                        color: C.blue,
+                        fontSize: 10,
+                        fontWeight: 800,
+                        letterSpacing: '0.12em',
+                        margin: '0 0 5px',
+                      }}
+                    >
+                      MEMBER IDENTIFICATION
+                    </p>
+
+                    <h2
+                      style={{
+                        fontSize: 20,
+                        fontWeight: 850,
+                        color: C.ink,
+                        margin: 0,
+                        letterSpacing: '-0.04em',
+                      }}
+                    >
+                      Member QR Code
+                    </h2>
+
+                    {qrMemberObj && (
+                      <p
+                        style={{
+                          color: C.muted,
+                          fontSize: 11,
+                          margin: '6px 0 0',
+                        }}
+                      >
+                        {qrMemberObj.name} · {qrMemberObj.xts_id}
+                      </p>
+                    )}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setQrMember(null)}
+                    aria-label="Close QR code"
+                    style={{
+                      width: 33,
+                      height: 33,
+                      display: 'grid',
+                      placeItems: 'center',
+                      background: '#F5F6FB',
+                      border: `1px solid ${C.border}`,
+                      borderRadius: 9,
+                      cursor: 'pointer',
+                      color: C.muted,
+                    }}
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+
+                <div
+                  style={{
+                    display: 'inline-block',
+                    padding: 17,
+                    borderRadius: 14,
+                    border: `1px solid ${C.border}`,
+                    background: C.white,
+                    marginBottom: 15,
+                  }}
+                >
+                  <QRCodeSVG value={qrUrl} size={200} />
+                </div>
+
+                <div style={{ display: 'none' }}>
+                  <QRCodeCanvas
+                    id="qr-download-canvas"
+                    value={qrUrl}
+                    size={400}
+                  />
+                </div>
+
+                <p
+                  style={{
+                    color: C.muted,
+                    fontSize: 11,
+                    lineHeight: 1.7,
+                    margin: '0 0 17px',
+                  }}
+                >
+                  Scan to open the member profile. XTS ID verification may be
+                  required to access profile details.
+                </p>
+
+                <button
+                  type="button"
+                  onClick={downloadQR}
+                  style={{
+                    ...primaryButtonStyle,
+                    width: '100%',
+                  }}
+                >
+                  <Download size={15} />
+                  Download QR Code
+                </button>
+          </div>
 </div>
+);
+})()}
+    </div>
   );
 }
