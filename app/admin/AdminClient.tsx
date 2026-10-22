@@ -1,7 +1,7 @@
 'use client';
 
 import { QRCodeSVG, QRCodeCanvas } from 'qrcode.react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   createMember,
   createCertificate,
@@ -42,6 +42,11 @@ import {
   ChevronRight,
   Sparkles,
   ExternalLink,
+  Activity,
+  Smartphone,
+  Monitor,
+  RefreshCw,
+  BarChart3,
 } from 'lucide-react';
 import MeetingAdminSection from './MeetingAdminSection';
 
@@ -64,6 +69,7 @@ const C = {
 };
 
 const NAV = [
+  { id: 'analytics', label: 'App Analytics', icon: Activity, description: 'Live visitors & installs' },
   { id: 'members', label: 'Add Member', icon: Plus, description: 'Register a member' },
   { id: 'view_members', label: 'Members', icon: Users, description: 'Manage member records' },
   { id: 'meetings', label: 'Meetings', icon: Video, description: 'Coordinate meetings' },
@@ -223,11 +229,39 @@ export default function AdminClient({
     projects = [],
     resignations = [],
     meetings = [],
+    analytics: initialAnalytics = null,
   } = initialData || {};
 
   const pendingCount = resignations.filter(
     (r: any) => r.status === 'pending'
   ).length;
+
+  // ── Analytics live state ──────────────────────────────────────────────────
+  const [analyticsData, setAnalyticsData] = useState<any>(initialAnalytics);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+
+  const refreshAnalytics = async () => {
+    setAnalyticsLoading(true);
+    try {
+      const res = await fetch('/api/analytics/track');
+      if (res.ok) {
+        const data = await res.json();
+        setAnalyticsData(data);
+      }
+    } catch (e) {
+      console.error('Analytics refresh failed:', e);
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  };
+
+  // Auto-refresh analytics every 30 seconds when on analytics tab
+  useEffect(() => {
+    if (activeTab !== 'analytics') return;
+    refreshAnalytics();
+    const interval = setInterval(refreshAnalytics, 30000);
+    return () => clearInterval(interval);
+  }, [activeTab]);
 
   const handleAction = async (
     action: (formData: FormData) => Promise<any>,
@@ -1354,6 +1388,253 @@ export default function AdminClient({
                 XTS ADMIN
               </span>
             </div>
+
+            {/* ANALYTICS TAB */}
+            {activeTab === 'analytics' && (
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+                  <div>
+                    <p style={{ margin: 0, color: C.blue, fontSize: 10, fontWeight: 800, letterSpacing: '0.14em', textTransform: 'uppercase' }}>
+                      Live Monitoring
+                    </p>
+                    <h2 style={{ margin: '6px 0 4px', color: C.ink, fontSize: 23, fontWeight: 800, letterSpacing: '-0.045em' }}>
+                      App Analytics
+                    </h2>
+                    <p style={{ margin: 0, color: C.muted, fontSize: 13 }}>
+                      Real-time visitor activity and PWA install tracking for the XTS portal.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={refreshAnalytics}
+                    disabled={analyticsLoading}
+                    style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 7,
+                      padding: '9px 16px', borderRadius: 10,
+                      background: C.blueLight, color: C.blue,
+                      border: `1px solid #DDE2FF`, cursor: 'pointer',
+                      fontSize: 12, fontWeight: 700, flexShrink: 0,
+                      opacity: analyticsLoading ? 0.6 : 1,
+                    }}
+                  >
+                    <RefreshCw size={14} style={{ animation: analyticsLoading ? 'spin 1s linear infinite' : 'none' }} />
+                    {analyticsLoading ? 'Refreshing…' : 'Refresh'}
+                  </button>
+                </div>
+
+                {/* LIVE METRICS GRID */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 28 }}>
+                  {/* Currently Visiting */}
+                  <div style={{ ...cardStyle, padding: '20px 22px', borderLeft: '4px solid #22C55E', position: 'relative', overflow: 'hidden' }}>
+                    <div style={{ position: 'absolute', top: 10, right: 14, width: 10, height: 10, borderRadius: '50%', background: '#22C55E', boxShadow: '0 0 0 4px rgba(34,197,94,0.2)', animation: 'pulse 2s ease-in-out infinite' }} />
+                    <p style={{ margin: 0, fontSize: 10, fontWeight: 800, color: '#15803D', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+                      Currently Visiting
+                    </p>
+                    <p style={{ margin: '8px 0 0', fontSize: 36, fontWeight: 900, color: C.ink, letterSpacing: '-0.04em', lineHeight: 1 }}>
+                      {analyticsData?.currentlyVisiting ?? '—'}
+                    </p>
+                    <p style={{ margin: '6px 0 0', fontSize: 11, color: C.muted }}>Active in last 3 minutes</p>
+                  </div>
+
+                  {/* App Downloads */}
+                  <div style={{ ...cardStyle, padding: '20px 22px', borderLeft: '4px solid #3347F2' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 8 }}>
+                      <Smartphone size={14} color={C.blue} />
+                      <p style={{ margin: 0, fontSize: 10, fontWeight: 800, color: C.blue, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+                        App Downloads
+                      </p>
+                    </div>
+                    <p style={{ margin: 0, fontSize: 36, fontWeight: 900, color: C.ink, letterSpacing: '-0.04em', lineHeight: 1 }}>
+                      {analyticsData?.totalAppInstalls ?? '—'}
+                    </p>
+                    <p style={{ margin: '6px 0 0', fontSize: 11, color: C.muted }}>PWA installs detected</p>
+                  </div>
+
+                  {/* Visits Today */}
+                  <div style={{ ...cardStyle, padding: '20px 22px', borderLeft: '4px solid #FFB627' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 8 }}>
+                      <BarChart3 size={14} color="#A16207" />
+                      <p style={{ margin: 0, fontSize: 10, fontWeight: 800, color: '#A16207', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+                        Visits Today
+                      </p>
+                    </div>
+                    <p style={{ margin: 0, fontSize: 36, fontWeight: 900, color: C.ink, letterSpacing: '-0.04em', lineHeight: 1 }}>
+                      {analyticsData?.totalVisitsToday ?? '—'}
+                    </p>
+                    <p style={{ margin: '6px 0 0', fontSize: 11, color: C.muted }}>Unique sessions today</p>
+                  </div>
+
+                  {/* All-Time Visits */}
+                  <div style={{ ...cardStyle, padding: '20px 22px', borderLeft: '4px solid #6D4AFF' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 8 }}>
+                      <Activity size={14} color="#6D4AFF" />
+                      <p style={{ margin: 0, fontSize: 10, fontWeight: 800, color: '#6D4AFF', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+                        Total Sessions
+                      </p>
+                    </div>
+                    <p style={{ margin: 0, fontSize: 36, fontWeight: 900, color: C.ink, letterSpacing: '-0.04em', lineHeight: 1 }}>
+                      {analyticsData?.totalVisitsAllTime ?? '—'}
+                    </p>
+                    <p style={{ margin: '6px 0 0', fontSize: 11, color: C.muted }}>All-time sessions logged</p>
+                  </div>
+                </div>
+
+                {/* DEVICE BREAKDOWN */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 28 }}>
+                  <div style={{ ...cardStyle, padding: '18px 22px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <div style={{ width: 32, height: 32, borderRadius: 9, background: '#EEF0FF', display: 'grid', placeItems: 'center' }}>
+                          <Smartphone size={16} color={C.blue} />
+                        </div>
+                        <div>
+                          <p style={{ margin: 0, fontSize: 12, fontWeight: 800, color: C.ink }}>Mobile Visitors</p>
+                          <p style={{ margin: 0, fontSize: 10, color: C.muted }}>Touch-screen devices</p>
+                        </div>
+                      </div>
+                      <span style={{ fontSize: 24, fontWeight: 900, color: C.blue }}>
+                        {analyticsData?.mobileVisits ?? 0}
+                      </span>
+                    </div>
+                    <div style={{ height: 8, borderRadius: 6, background: '#F1F3F9', overflow: 'hidden' }}>
+                      <div style={{
+                        height: '100%', borderRadius: 6, background: C.blue,
+                        width: analyticsData?.totalVisitsAllTime
+                          ? `${Math.round((analyticsData.mobileVisits / analyticsData.totalVisitsAllTime) * 100)}%`
+                          : '0%',
+                        transition: 'width 0.6s ease',
+                      }} />
+                    </div>
+                    <p style={{ margin: '6px 0 0', fontSize: 10, color: C.muted }}>
+                      {analyticsData?.totalVisitsAllTime
+                        ? `${Math.round((analyticsData.mobileVisits / analyticsData.totalVisitsAllTime) * 100)}% of total`
+                        : 'No data yet'}
+                    </p>
+                  </div>
+
+                  <div style={{ ...cardStyle, padding: '18px 22px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <div style={{ width: 32, height: 32, borderRadius: 9, background: '#F0FAF6', display: 'grid', placeItems: 'center' }}>
+                          <Monitor size={16} color="#15803D" />
+                        </div>
+                        <div>
+                          <p style={{ margin: 0, fontSize: 12, fontWeight: 800, color: C.ink }}>Desktop Visitors</p>
+                          <p style={{ margin: 0, fontSize: 10, color: C.muted }}>Laptop / PC sessions</p>
+                        </div>
+                      </div>
+                      <span style={{ fontSize: 24, fontWeight: 900, color: '#15803D' }}>
+                        {analyticsData?.desktopVisits ?? 0}
+                      </span>
+                    </div>
+                    <div style={{ height: 8, borderRadius: 6, background: '#F1F3F9', overflow: 'hidden' }}>
+                      <div style={{
+                        height: '100%', borderRadius: 6, background: '#15803D',
+                        width: analyticsData?.totalVisitsAllTime
+                          ? `${Math.round((analyticsData.desktopVisits / analyticsData.totalVisitsAllTime) * 100)}%`
+                          : '0%',
+                        transition: 'width 0.6s ease',
+                      }} />
+                    </div>
+                    <p style={{ margin: '6px 0 0', fontSize: 10, color: C.muted }}>
+                      {analyticsData?.totalVisitsAllTime
+                        ? `${Math.round((analyticsData.desktopVisits / analyticsData.totalVisitsAllTime) * 100)}% of total`
+                        : 'No data yet'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* RECENT VISITORS TABLE */}
+                <div style={{ ...cardStyle, padding: '20px 22px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18, paddingBottom: 14, borderBottom: `1px solid ${C.border}` }}>
+                    <div style={{ width: 32, height: 32, borderRadius: 9, background: C.blueLight, display: 'grid', placeItems: 'center', color: C.blue }}>
+                      <Activity size={16} />
+                    </div>
+                    <div>
+                      <p style={{ margin: 0, fontSize: 13, fontWeight: 800, color: C.ink }}>Recent Sessions</p>
+                      <p style={{ margin: 0, fontSize: 10, color: C.muted }}>Latest 10 activity logs</p>
+                    </div>
+                  </div>
+
+                  {!analyticsData?.recentVisitors?.length ? (
+                    <div style={{ textAlign: 'center', padding: '32px 0', color: C.muted }}>
+                      <Activity size={32} style={{ opacity: 0.3, margin: '0 auto 10px', display: 'block' }} />
+                      <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: C.ink }}>No sessions recorded yet</p>
+                      <p style={{ margin: '4px 0 0', fontSize: 12 }}>Visitors will appear here once they access the portal.</p>
+                    </div>
+                  ) : (
+                    <div style={{ overflowX: 'auto' }}>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                        <thead>
+                          <tr style={{ borderBottom: `1px solid ${C.border}` }}>
+                            {['Visitor ID', 'Device', 'Page', 'Installed App', 'Last Seen'].map((h) => (
+                              <th key={h} style={{ padding: '8px 10px', textAlign: 'left', fontSize: 10, fontWeight: 800, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.1em', whiteSpace: 'nowrap' }}>{h}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {analyticsData.recentVisitors.map((v: any, i: number) => {
+                            const lastSeen = v.lastActive ? new Date(v.lastActive) : null;
+                            const minsAgo = lastSeen ? Math.round((Date.now() - lastSeen.getTime()) / 60000) : null;
+                            const timeLabel = minsAgo !== null
+                              ? minsAgo < 1 ? 'Just now'
+                                : minsAgo < 60 ? `${minsAgo}m ago`
+                                : minsAgo < 1440 ? `${Math.round(minsAgo / 60)}h ago`
+                                : lastSeen!.toLocaleDateString()
+                              : '—';
+
+                            return (
+                              <tr key={v._id || i} style={{ borderBottom: `1px solid ${C.border}`, transition: 'background 0.15s' }}
+                                onMouseEnter={e => (e.currentTarget.style.background = C.paper)}
+                                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                              >
+                                <td style={{ padding: '10px 10px', color: C.muted, fontFamily: 'monospace', fontSize: 11 }}>
+                                  {String(v.visitorId).slice(0, 14)}…
+                                </td>
+                                <td style={{ padding: '10px 10px' }}>
+                                  <span style={{
+                                    display: 'inline-flex', alignItems: 'center', gap: 5,
+                                    padding: '3px 8px', borderRadius: 6,
+                                    background: v.device === 'mobile' ? '#EEF0FF' : '#F0FAF6',
+                                    color: v.device === 'mobile' ? C.blue : '#15803D',
+                                    fontSize: 11, fontWeight: 700,
+                                  }}>
+                                    {v.device === 'mobile' ? <Smartphone size={11} /> : <Monitor size={11} />}
+                                    {v.device === 'mobile' ? 'Mobile' : 'Desktop'}
+                                  </span>
+                                </td>
+                                <td style={{ padding: '10px 10px', color: C.ink, maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                  {v.path || '/'}
+                                </td>
+                                <td style={{ padding: '10px 10px' }}>
+                                  {v.installedApp || v.isStandalone ? (
+                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 8px', borderRadius: 6, background: '#EAF7F0', color: '#15803D', fontSize: 11, fontWeight: 700 }}>
+                                      <CheckCircle2 size={11} />
+                                      Installed
+                                    </span>
+                                  ) : (
+                                    <span style={{ fontSize: 11, color: C.subtle }}>Browser</span>
+                                  )}
+                                </td>
+                                <td style={{ padding: '10px 10px', color: C.muted, whiteSpace: 'nowrap', fontSize: 11 }}>
+                                  {timeLabel}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+
+                {/* Pulse animation style */}
+                <style>{`
+                  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+                  @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+                `}</style>
+              </div>
+            )}
 
             {/* ADD MEMBER */}
             {activeTab === 'members' && (

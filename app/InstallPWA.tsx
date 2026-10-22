@@ -48,6 +48,10 @@ export default function InstallPWA() {
     const { outcome } = await deferredPrompt.userChoice;
     if (outcome === 'accepted') {
       setShowBanner(false);
+      try {
+        const { trackAppInstall } = await import('./AnalyticsTracker');
+        trackAppInstall('mobile_pwa_banner');
+      } catch (e) {}
     }
     setInstalling(false);
     setDeferredPrompt(null);
@@ -80,24 +84,18 @@ export default function InstallPWA() {
       className="sm:hidden"
     >
       {/* App icon */}
-      <div
+      <img
+        src="/icon-192.png"
+        alt="XTS App Icon"
         style={{
           width: 44,
           height: 44,
           borderRadius: 10,
-          background: '#3347F2',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
           flexShrink: 0,
-          fontFamily: 'ui-sans-serif, system-ui',
-          fontWeight: 900,
-          fontSize: 18,
-          color: '#fff',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+          objectFit: 'cover',
         }}
-      >
-        X
-      </div>
+      />
 
       {/* Text */}
       <div style={{ flex: 1, minWidth: 0 }}>

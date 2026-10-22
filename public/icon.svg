@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0B0E23"/>
+      <stop offset="50%" stop-color="#141A38"/>
+      <stop offset="100%" stop-color="#1E275A"/>
+    </linearGradient>
+
+    <!-- Blue Arm Gradient -->
+    <linearGradient id="blueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4F74FF"/>
+      <stop offset="50%" stop-color="#3347F2"/>
+      <stop offset="100%" stop-color="#1D2BC4"/>
+    </linearGradient>
+
+    <!-- Gold Arm Gradient -->
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFCE54"/>
+      <stop offset="50%" stop-color="#FFB627"/>
+      <stop offset="100%" stop-color="#E08B00"/>
+    </linearGradient>
+
+    <!-- Glow Filter -->
+    <filter id="softGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="12" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- Squircle Base -->
+  <rect x="20" y="20" width="472" height="472" rx="110" ry="110" fill="url(#bgGrad)"/>
+  
+  <!-- Outer Glow Border -->
+  <rect x="20" y="20" width="472" height="472" rx="110" ry="110" fill="none" stroke="#3347F2" stroke-width="8" opacity="0.6"/>
+  <rect x="28" y="28" width="456" height="456" rx="102" ry="102" fill="none" stroke="#FFB627" stroke-width="3" opacity="0.4"/>
+
+  <!-- Circuit Pattern -->
+  <g opacity="0.12" stroke="#FFFFFF" stroke-width="1.5">
+    <line x1="256" y1="60" x2="256" y2="452"/>
+    <line x1="60" y1="256" x2="452" y2="256"/>
+    <line x1="160" y1="80" x2="160" y2="432"/>
+    <line x1="352" y1="80" x2="352" y2="432"/>
+  </g>
+
+  <!-- Blue Diagonal Bar -->
+  <polygon points="112,112 178,112 400,400 334,400" fill="url(#blueGrad)" filter="url(#softGlow)"/>
+
+  <!-- Gold Diagonal Bar (Cross) -->
+  <polygon points="334,112 400,112 178,400 112,400" fill="url(#goldGrad)" filter="url(#softGlow)"/>
+
+  <!-- Center Jewel Diamond -->
+  <polygon points="256,206 306,256 256,306 206,256" fill="#FFFFFF"/>
+  <polygon points="256,222 290,256 256,290 222,256" fill="#3347F2"/>
+
+  <!-- Corner Tech Nodes -->
+  <circle cx="145" cy="112" r="14" fill="#FFFFFF" stroke="#4F74FF" stroke-width="4"/>
+  <circle cx="367" cy="112" r="14" fill="#FFFFFF" stroke="#FFB627" stroke-width="4"/>
+  <circle cx="367" cy="400" r="14" fill="#FFFFFF" stroke="#4F74FF" stroke-width="4"/>
+  <circle cx="145" cy="400" r="14" fill="#FFFFFF" stroke="#FFB627" stroke-width="4"/>
+</svg>

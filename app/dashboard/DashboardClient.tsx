@@ -649,6 +649,126 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
             </div>
           )}
 
+          {/* NOTIFICATIONS */}
+          {activeTab === "notifications" && (
+            <div className="max-w-5xl">
+              <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+                {sectionHeader(
+                  <Bell className="h-5 w-5" />,
+                  "Notifications & Announcements",
+                  "#E11D48"
+                )}
+
+                {unreadNotifsCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setMemberNotifications((prev: any) =>
+                        prev.map((n: any) => ({ ...n, isRead: true }))
+                      );
+                      await markAllNotificationsAsRead(user.xts_id);
+                    }}
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-[#DDE0F0] bg-white px-4 py-2 text-xs font-bold text-[#3347F2] shadow-sm transition hover:bg-[#3347F2] hover:text-white"
+                  >
+                    <CheckCheck className="h-4 w-4" />
+                    Mark all as read
+                  </button>
+                )}
+              </div>
+
+              {memberNotifications.length === 0 ? (
+                <EmptyState
+                  icon={<Bell className="h-7 w-7" />}
+                  title="No notifications yet"
+                  description="Updates regarding events, projects, meetings, and society activities will appear here."
+                />
+              ) : (
+                <div className="space-y-3">
+                  {memberNotifications.map((notif: any) => {
+                    const isRead = notif.isRead;
+                    return (
+                      <article
+                        key={notif._id}
+                        className={`flex flex-col gap-4 rounded-2xl border p-5 transition ${
+                          isRead
+                            ? "border-[#DDE0F0] bg-white text-[#6B7086]"
+                            : "border-[#3347F2]/30 bg-white shadow-sm ring-1 ring-[#3347F2]/10"
+                        } sm:flex-row sm:items-start sm:justify-between`}
+                      >
+                        <div className="flex items-start gap-4">
+                          <div
+                            className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${
+                              notif.type.startsWith("event")
+                                ? "bg-[#6D4AFF]/10 text-[#6D4AFF]"
+                                : notif.type.startsWith("project")
+                                ? "bg-[#0F766E]/10 text-[#0F766E]"
+                                : notif.type === "welcome"
+                                ? "bg-[#FFB627]/20 text-[#D97706]"
+                                : "bg-[#3347F2]/10 text-[#3347F2]"
+                            }`}
+                          >
+                            {notif.type.startsWith("event") ? (
+                              <Calendar className="h-5 w-5" />
+                            ) : notif.type.startsWith("project") ? (
+                              <FolderGit2 className="h-5 w-5" />
+                            ) : notif.type === "welcome" ? (
+                              <Sparkles className="h-5 w-5" />
+                            ) : (
+                              <Bell className="h-5 w-5" />
+                            )}
+                          </div>
+
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-2 mb-1">
+                              {!isRead && (
+                                <span className="rounded-full bg-[#3347F2] px-2 py-0.5 text-[10px] font-bold text-white">
+                                  NEW
+                                </span>
+                              )}
+                              <span className="text-xs font-semibold text-[#8B90A3]">
+                                {new Date(notif.createdAt).toLocaleDateString(undefined, {
+                                  month: "short",
+                                  day: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
+                              </span>
+                            </div>
+
+                            <h3 className={`${D} text-lg font-bold text-[#0F1226]`}>
+                              {notif.title}
+                            </h3>
+
+                            <p className="mt-1.5 whitespace-pre-line text-sm leading-relaxed text-[#0F1226]/75">
+                              {notif.message}
+                            </p>
+                          </div>
+                        </div>
+
+                        {!isRead && (
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              setMemberNotifications((prev: any) =>
+                                prev.map((n: any) =>
+                                  n._id === notif._id ? { ...n, isRead: true } : n
+                                )
+                              );
+                              await markNotificationAsRead(notif._id, user.xts_id);
+                            }}
+                            className="shrink-0 self-end sm:self-center rounded-xl border border-[#DDE0F0] bg-[#F4F5FA] px-3 py-1.5 text-xs font-semibold text-[#0F1226] transition hover:bg-[#3347F2] hover:text-white"
+                          >
+                            Mark read
+                          </button>
+                        )}
+                      </article>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* MEETINGS */}
           {activeTab === "meetings" && (
             <div className="max-w-5xl">

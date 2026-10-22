@@ -30,6 +30,7 @@ import { Resignation } from '@/models/Resignation';
 import { Meeting } from '@/models/Meeting';
 import { Attendance } from '@/models/Attendance';
 import { Notification } from '@/models/Notification';
+import { AnalyticsSession, AnalyticsEvent } from '@/models/Analytics';
 import { cookies } from 'next/headers';
 import { verifyToken } from './auth';
 import { revalidatePath } from 'next/cache';
@@ -917,6 +918,8 @@ export async function getAllDataForAdmin() {
     attendanceSummary: attendanceCountsByMeeting[m._id.toString()] || { present: 0, absent: 0, excused: 0, total: 0 },
   }));
 
+  const analytics = await getAppAnalyticsData();
+
   return JSON.parse(JSON.stringify({
     members,
     certificates,
@@ -924,7 +927,60 @@ export async function getAllDataForAdmin() {
     projects,
     resignations,
     meetings: enrichedMeetings,
+    analytics,
   }));
+}
+
+export async function getAppAnalyticsData() {
+  try {
+    await connectToDatabase();
+    const threeMinsAgo = new Date(Date.now() - 3 * 60 * 1000);
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const [
+      currentlyVisiting,
+      totalAppInstalls,
+      totalVisitsToday,
+      totalVisitsAllTime,
+      mobileVisits,
+      desktopVisits,
+      recentVisitors,
+    ] = await Promise.all([
+      AnalyticsSession.countDocuments({ lastActive: { $gte: threeMinsAgo } }),
+      AnalyticsEvent.countDocuments({ type: 'app_install' }),
+      AnalyticsSession.countDocuments({ createdAt: { $gte: startOfToday } }),
+      AnalyticsSession.countDocuments(),
+      AnalyticsSession.countDocuments({ device: 'mobile' }),
+      AnalyticsSession.countDocuments({ device: 'desktop' }),
+      AnalyticsSession.find().sort({ lastActive: -1 }).limit(10).lean(),
+    ]);
+
+    const standaloneCount = await AnalyticsSession.countDocuments({
+      $or: [{ installedApp: true }, { isStandalone: true }],
+    });
+
+    return {
+      currentlyVisiting: Math.max(currentlyVisiting, 1),
+      totalAppInstalls: Math.max(totalAppInstalls, standaloneCount),
+      totalVisitsToday,
+      totalVisitsAllTime,
+      mobileVisits,
+      desktopVisits,
+      recentVisitors: JSON.parse(JSON.stringify(recentVisitors)),
+    };
+  } catch (error) {
+    console.error('getAppAnalyticsData error:', error);
+    return {
+      currentlyVisiting: 1,
+      totalAppInstalls: 0,
+      totalVisitsToday: 0,
+      totalVisitsAllTime: 0,
+      mobileVisits: 0,
+      desktopVisits: 0,
+      recentVisitors: [],
+    };
+  }
 }
 
 export async function verifyAndGetMember(id: string, xts_id: string) {
