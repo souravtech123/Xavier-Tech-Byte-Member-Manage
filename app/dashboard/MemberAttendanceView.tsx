@@ -282,14 +282,7 @@ export default function MemberAttendanceView({
       }}
     >
       {/* Section Heading */}
-      {sectionHeader(
-        <CheckCircle2
-          size={18}
-          color={COLORS.blue}
-        />,
-        'My Attendance',
-        COLORS.blue
-      )}
+  
 
       <div
         style={{

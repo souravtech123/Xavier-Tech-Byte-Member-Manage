@@ -182,12 +182,7 @@ export default function MemberMeetingsView({
       }}
     >
       {/* Section Heading */}
-      {sectionHeader(
-        <Video size={18} color={COLORS.blue} />,
-        'My Meetings',
-        COLORS.blue
-      )}
-
+    
       <p
         style={{
           margin: '8px 0 22px',
