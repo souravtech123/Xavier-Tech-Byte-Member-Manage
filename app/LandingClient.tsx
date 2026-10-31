@@ -150,8 +150,11 @@ export default function LandingClient({ initialEvents = [], initialProjects = []
       {/* NAV */}
       <header className="sticky top-0 z-50 border-b border-[#DDE0F0] bg-[#F4F5FA]/90 backdrop-blur">
         <nav className={`${wrap} flex items-center justify-between py-4`}>
-          <Link href="/" className={`${D} text-xl font-extrabold tracking-tight ${focus}`}>
-            Xavier<span className="text-[#3347F2]">Tech</span>Byte
+          <Link href="/" className={`${D} flex items-center gap-2.5 text-xl font-extrabold tracking-tight ${focus}`}>
+            <img src="/icon-192.png" alt="XTS Logo" className="h-8 w-8 rounded-full object-contain shadow-sm" />
+            <span>
+              Xavier<span className="text-[#3347F2]">Tech</span>Byte
+            </span>
           </Link>
 
           <div className="hidden items-center gap-8 lg:flex">
@@ -213,7 +216,7 @@ export default function LandingClient({ initialEvents = [], initialProjects = []
       </header>
 
       {/* HERO */}
-      <section className={`${wrap} grid gap-14 pb-20 pt-16 sm:pt-24 lg:grid-cols-[1.15fr_0.85fr] lg:items-end`}>
+      <section className={`${wrap} grid gap-12 pb-20 pt-16 sm:pt-24 lg:grid-cols-[1.1fr_0.9fr] lg:items-center`}>
         <div>
           <p className="text-sm font-medium text-[#0F1226]/60">
             Student-led tech community · St. Xavier&apos;s College, Ranchi
@@ -246,7 +249,26 @@ export default function LandingClient({ initialEvents = [], initialProjects = []
           </div>
         </div>
 
-        <Byte />
+        <div className="flex flex-col gap-6">
+          {/* XTS Members Photo Slot */}
+          <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl border border-[#0F1226]/10 bg-[#0F1226] shadow-xl">
+            <img
+              src="xts-members.jpg"
+              alt="XTS Members"
+              className="w-full aspect-[4/3] sm:aspect-[16/10] object-cover transition-transform duration-500 hover:scale-[1.02]"
+            />
+            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#0B0E23]/95 via-[#0B0E23]/50 to-transparent p-4 sm:p-5 text-white">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-[#FFB627]">
+                St. Xavier&apos;s College, Ranchi
+              </p>
+              <p className="text-sm sm:text-base font-extrabold text-white">
+                Xavier Tech Byte Society Members
+              </p>
+            </div>
+          </div>
+
+          <Byte />
+        </div>
       </section>
 
       {/* STATS */}

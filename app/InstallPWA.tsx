@@ -90,10 +90,10 @@ export default function InstallPWA() {
         style={{
           width: 44,
           height: 44,
-          borderRadius: 10,
+          borderRadius: '50%',
           flexShrink: 0,
           boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
-          objectFit: 'cover',
+          objectFit: 'contain',
         }}
       />
 

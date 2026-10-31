@@ -1,10 +1,15 @@
-const CACHE_NAME = 'xts-v1';
+const CACHE_NAME = 'xts-v2';
 
 // Core pages/assets to pre-cache on install
 const PRE_CACHE = [
   '/',
   '/login',
   '/admin-login',
+  '/icon-192.png',
+  '/icon-512.png',
+  '/apple-touch-icon.png',
+  '/favicon.png',
+  '/favicon.ico',
 ];
 
 // Install: pre-cache shell pages

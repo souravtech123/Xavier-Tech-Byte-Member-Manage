@@ -84,9 +84,7 @@ export default function MemberLogin() {
             href="/"
             className={`${D} flex items-center gap-3 text-lg font-extrabold tracking-tight ${focus}`}
           >
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#3347F2] text-white">
-              <Zap className="h-5 w-5" />
-            </span>
+            <img src="/icon-192.png" alt="XTS Logo" className="h-10 w-10 rounded-full object-contain shadow-sm" />
             <span>
               Xavier<span className="text-[#3347F2]">Tech</span>Byte
             </span>

@@ -274,9 +274,7 @@ export default function DashboardClient({ data }: { data: DashboardData }) {
       <>
         <div className="mb-5 flex items-center justify-between px-2">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#3347F2] text-white">
-              <Zap className="h-5 w-5" />
-            </div>
+            <img src="/icon-192.png" alt="XTS Logo" className="h-10 w-10 rounded-full object-contain shrink-0 shadow-sm" />
 
             <div>
               <p className={`${D} font-extrabold tracking-tight text-[#0F1226]`}>

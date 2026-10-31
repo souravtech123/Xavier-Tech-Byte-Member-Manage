@@ -257,21 +257,17 @@ export default async function AdminDashboard() {
               minWidth: 0,
             }}
           >
-            <div
-              className="brand-mark"
+            <img
+              src="/icon-192.png"
+              alt="XTS Logo"
               style={{
-                width: 42,
-                height: 42,
-                borderRadius: 13,
-                background: C.ink,
-                display: 'grid',
-                placeItems: 'center',
-                color: C.white,
+                width: 40,
+                height: 40,
+                borderRadius: '50%',
+                objectFit: 'contain',
                 flexShrink: 0,
               }}
-            >
-              <Zap size={21} fill="#FFFFFF" />
-            </div>
+            />
 
             <div style={{ minWidth: 0 }}>
               <div

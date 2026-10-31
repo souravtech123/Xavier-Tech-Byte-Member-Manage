@@ -80,10 +80,8 @@ export default function LoggedInLanding({
       >
         <header className="sticky top-0 z-50 border-b border-[#DDE0F0] bg-[#F4F5FA]/90 backdrop-blur">
           <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3.5 sm:px-8">
-            <Link href="/" className={`${D} flex items-center gap-2 text-lg font-extrabold tracking-tight`}>
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#0F1226] text-white">
-                <Zap className="h-4 w-4 text-[#FFB627]" />
-              </div>
+            <Link href="/" className={`${D} flex items-center gap-2.5 text-lg font-extrabold tracking-tight`}>
+              <img src="/icon-192.png" alt="XTS Logo" className="h-8 w-8 rounded-full object-contain shrink-0 shadow-sm" />
               <span className="hidden sm:block">
                 Xavier<span className="text-[#3347F2]">Tech</span>Byte
               </span>
@@ -203,10 +201,8 @@ export default function LoggedInLanding({
       {/* ── NAVBAR ─────────────────────────────────────────────────────────── */}
       <header className="sticky top-0 z-50 border-b border-[#DDE0F0] bg-[#F4F5FA]/95 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-8">
-          <Link href="/" className={`${D} flex items-center gap-2 text-lg font-extrabold tracking-tight`}>
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#3347F2] text-white">
-              <Zap className="h-4 w-4" />
-            </div>
+          <Link href="/" className={`${D} flex items-center gap-2.5 text-lg font-extrabold tracking-tight`}>
+            <img src="/icon-192.png" alt="XTS Logo" className="h-8 w-8 rounded-full object-contain shrink-0 shadow-sm" />
             <span className="hidden sm:block">
               Xavier<span className="text-[#3347F2]">Tech</span>Byte
             </span>

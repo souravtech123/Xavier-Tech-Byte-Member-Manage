@@ -155,21 +155,17 @@ export default function AdminLogin() {
             color: COLORS.ink,
           }}
         >
-          <div
+          <img
+            src="/icon-192.png"
+            alt="XTS Logo"
             style={{
               width: 38,
               height: 38,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
+              borderRadius: '50%',
+              objectFit: 'contain',
               flexShrink: 0,
-              background: COLORS.blue,
-              color: '#FFFFFF',
-              borderRadius: 10,
             }}
-          >
-            <Zap size={20} strokeWidth={2.5} />
-          </div>
+          />
 
           <div>
             <div
